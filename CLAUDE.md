@@ -2,55 +2,131 @@
 
 ## Project identity
 
-This repository is **iPad1FTPDownloader**, a legacy FTP file client for **iPad 1 / iOS 5.1.1 / armv7**.
+This repository is **iPad1FTPDownloader**, the network-transfer specialist for **iPad 1 / iOS 5.1.1 / armv7**.
 
-The primary goal is not modern iOS compatibility. The primary goal is to produce a stable, lightweight application that can still build with Theos and run on a first-generation iPad with very limited RAM.
+The goal is not to become a general file manager. The goal is to provide reliable FTP/network transfer on a 256 MB legacy device and hand completed files to sibling applications through a shared physical path.
 
 ## Non-negotiable constraints
 
-- Target iOS 5.1.1.
-- Target armv7.
-- Use Objective-C and UIKit APIs available to iOS 5.
-- Manual memory management is enabled; do not introduce ARC-only assumptions.
-- Avoid APIs introduced after iOS 5 unless guarded and proven safe.
-- Avoid Swift.
-- Avoid large third-party frameworks unless there is no reasonable alternative.
-- Preserve Theos `.deb` packaging.
-- Do not assume App Store deployment.
-- Physical-device testing matters more than simulator-only success.
+- iPad 1
+- 256 MB RAM
+- iOS 5.1.1
+- armv7
+- Objective-C
+- UIKit APIs available to iOS 5
+- Manual memory management / MRC
+- Theos `.deb` packaging
+- CFNetwork/CFFTP for current FTP transport
+- stream-based transfer
+- physical-device testing is authoritative
 
-## Build environment
+Do not introduce Swift, ARC assumptions, modern-only APIs, or large third-party frameworks casually.
 
-Typical project location:
+## Authoritative integration contract
+
+Read `INTEGRATION.md` before making architectural changes.
+
+Canonical application-family flow:
 
 ```text
-~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
+FTP Server
+   ↓
+iPad1FTPDownloader
+   ↓
+/var/mobile/Media/iPad1Files/Downloads/
+   ↓
+iPad1Files
+   ↓
+iPad1PDFReader
 ```
 
-Typical build:
+## Canonical download root
 
-```bash
-find . -type f -exec touch {} +
-make clean
-make package FINALPACKAGE=1
+All new FTP downloads must be written directly to:
+
+```text
+/var/mobile/Media/iPad1Files/Downloads/
 ```
 
-`find ... touch` is used to avoid WSL/host clock-skew warnings after archive extraction.
+Create the directory if it does not exist.
 
-## Legacy SSH deployment
+Do not use `/var/mobile/Media/iPad1FTPDownloads/` for new downloads.
 
-The iPad's old SSH server may only offer legacy RSA host keys. Use a per-command compatibility option instead of weakening the host globally:
+Do not create a second copy solely to make the file visible to iPad1Files.
 
-```bash
-scp -o HostKeyAlgorithms=+ssh-rsa <package.deb> root@192.168.1.2:/var/mobile/
-ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.1.2
+## Single physical file rule
+
+One transferred file = one physical file.
+
+Correct:
+
+```text
+/var/mobile/Media/iPad1Files/Downloads/example.pdf
 ```
 
-## Known FTP behavior
+Incorrect:
 
-On iOS 5 CFNetwork, FTP directory-listing URLs should be normalized so directory paths end in `/`.
+```text
+/var/mobile/Media/iPad1FTPDownloads/example.pdf
+/var/mobile/Media/iPad1Files/Downloads/example.pdf
+```
 
-Correct examples:
+## Responsibility boundary
+
+### Keep here
+
+- FTP connection
+- remote folder browsing
+- download/upload
+- pause/resume
+- transfer progress/speed
+- FIFO queue
+- remote rename/delete
+- MKD/RMD
+- saved servers
+- remote search
+- sorting
+
+### Leave to iPad1Files
+
+- advanced local copy/move
+- broad local folder management
+- favorites
+- filesystem-wide search
+- file classification
+- rich/general preview system
+- Open With registry
+
+### Leave to iPad1PDFReader
+
+- PDF rendering
+- PDF reading features
+- page navigation/zoom/bookmarks/etc.
+
+## PDF hand-off
+
+On completed `.pdf` transfer, use the same canonical file path:
+
+```text
+ipad1pdf://open?path=<percent-encoded-absolute-path>
+```
+
+Do not copy the PDF.
+
+Optional iPad1Files hand-off:
+
+```text
+ipad1files://show?path=<percent-encoded-absolute-path>
+```
+
+## Remote directory path invariant
+
+Every remote directory path must:
+
+- start with `/`;
+- end with `/`.
+
+Examples:
 
 ```text
 /
@@ -59,68 +135,118 @@ Correct examples:
 /domains/example.com/public_html/
 ```
 
-Incorrect directory state must not be allowed to propagate internally:
+Never let slashless directory state propagate internally.
 
-```text
-/domains/example.com/public_html
-```
+Normalization must apply to:
 
-Path normalization should happen centrally, not only when creating a URL. Entering a directory, manually entering a directory path, refreshing, and navigating to the parent must all preserve the same invariant.
+- manual path entry;
+- current path state;
+- child navigation;
+- parent navigation;
+- refresh;
+- URL construction.
 
-## Current release status
+## Memory policy
 
-### v1.2
+### Safe
 
-Known to have been built and installed on the physical iPad. FTP listing, download and upload were observed working. Transfer percentage/speed UI was observed working.
+- streamed reads/writes;
+- 8–16 KB class buffers;
+- small queue metadata;
+- URL/path hand-offs.
 
-### v1.3
+### Caution
 
-Development branch/source state. Intended to add local file browsing, search/sort, preview, pause/resume and queue infrastructure. Treat these as unverified until the exact source has built successfully and passed device testing.
+- recursive remote search;
+- very long queues;
+- large previews.
+
+### Do not add
+
+- whole-file RAM buffering;
+- OCR;
+- AI/ML;
+- large background caches;
+- SMB feature expansion;
+- heavy SFTP libraries without profiling on the physical iPad 1.
 
 ## SFTP / FTPS rule
 
-Never claim SFTP or FTPS support merely because stubs, UI fields, enums or integration points exist.
+Do not claim SFTP or FTPS merely because UI, enums, stubs or integration points exist.
 
-- SFTP requires an actual SSH/SFTP implementation, most likely libssh2 compiled for the target.
+- SFTP requires a real SSH/SFTP library such as libssh2 compiled for armv7/iOS 5.
 - FTPS requires a real TLS-capable FTP control/data implementation.
 
-A successful plain FTP build is more important than speculative secure-protocol code that breaks iOS 5 compilation.
+Before integrating libssh2:
+
+1. build a minimal proof-of-concept;
+2. confirm armv7/iOS 5 linkage;
+3. measure memory footprint on the physical iPad;
+4. only then integrate into the main app.
 
 ## Coding style
 
 Prefer:
 
-- Small Objective-C classes with single responsibilities.
-- Clear delegates over complex dependency patterns.
-- Foundation collections and UIKit controls available in iOS 5.
-- Defensive nil/error handling.
-- 8–16 KB transfer buffers rather than excessive buffering.
-- Explicit release/dealloc ownership rules.
+- small Objective-C classes;
+- explicit delegates;
+- UIKit/Foundation APIs available to iOS 5;
+- defensive error handling;
+- explicit MRC ownership;
+- streamed network/file I/O;
+- canonical-path helper functions used everywhere.
 
 Avoid:
 
-- Modern-only Objective-C conveniences without compatibility checks.
-- Large memory copies of remote files.
-- Loading entire large files into RAM for preview.
-- Blocking network operations on the main thread.
-- Silent error swallowing where the user needs actionable feedback.
+- duplicated path logic in multiple controllers;
+- rich local file-manager subsystems;
+- loading complete binary files for preview;
+- blocking network I/O on the main thread;
+- silent FTP server errors.
 
-## Security
+## Build environment
 
-- Never commit real FTP passwords or production secrets.
-- Example IPs and usernames should be placeholders unless intentionally public.
-- Saved passwords are currently a usability feature, not a strong secret-storage design. If improving credential storage, use an iOS-5-compatible Keychain solution.
+Typical location:
+
+```text
+~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
+```
+
+Build:
+
+```bash
+find . -type f -exec touch {} +
+make clean
+make package FINALPACKAGE=1
+```
+
+The `touch` step helps avoid WSL/archive clock-skew warnings.
+
+## Deployment
+
+Old iOS OpenSSH may require a per-command RSA compatibility flag:
+
+```bash
+scp -o HostKeyAlgorithms=+ssh-rsa <package.deb> root@<IP>:/var/mobile/
+ssh -o HostKeyAlgorithms=+ssh-rsa root@<IP>
+```
+
+Do not weaken the host SSH configuration globally when a command-local compatibility flag is sufficient.
 
 ## Before making a release
 
-1. Build from a clean tree.
-2. Confirm `.deb` version matches `control` and `Info.plist`.
-3. Install over the previous version with `dpkg -i`.
-4. Refresh SpringBoard.
-5. Test listing from `/` and nested folders.
-6. Test parent navigation and trailing slash handling.
-7. Test download and verify file size.
-8. Test upload and verify server-side file size.
-9. Test rename/delete/new folder if changed.
-10. Test memory stability with several navigation/transfer cycles.
-11. Update `CHANGELOG.md`, `SESSION.md` and `TASK.md`.
+1. Read `INTEGRATION.md`.
+2. Build from a clean tree.
+3. Verify package version in `control` and `Info.plist`.
+4. Install on physical iPad 1.
+5. Verify canonical shared Downloads root is used.
+6. Verify no duplicate copy exists.
+7. Verify child/parent directory navigation preserves leading/trailing slash invariant.
+8. Verify download/upload.
+9. Verify progress/speed.
+10. Verify pause/resume if changed.
+11. Verify queue if changed.
+12. Verify remote rename/delete/MKD/RMD if changed.
+13. Verify PDF hand-off opens the same physical file.
+14. Verify local UI has not expanded into iPad1Files scope.
+15. Update `CHANGELOG.md`, `SESSION.md`, `TASK.md`, and `TESTING.md` with actual results.
