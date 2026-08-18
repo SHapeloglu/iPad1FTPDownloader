@@ -4,7 +4,19 @@
 
 This repository is **iPad1FTPDownloader**, the network-transfer specialist for **iPad 1 / iOS 5.1.1 / armv7**.
 
-The goal is not to become a general file manager. The goal is to provide reliable FTP/network transfer on a 256 MB legacy device and hand completed files to sibling applications through a shared physical path.
+The goal is reliable FTP/network transfer on a 256 MB legacy device. It must not become a general local file manager or a PDF reader.
+
+## Read first
+
+Before architectural or scope changes, read in this order:
+
+1. `INTEGRATION.md`
+2. `ARCHITECTURE.md`
+3. `TASK.md`
+4. `SESSION.md`
+5. `TESTING.md`
+
+`INTEGRATION.md` is authoritative for cross-app ownership.
 
 ## Non-negotiable constraints
 
@@ -16,17 +28,13 @@ The goal is not to become a general file manager. The goal is to provide reliabl
 - UIKit APIs available to iOS 5
 - Manual memory management / MRC
 - Theos `.deb` packaging
-- CFNetwork/CFFTP for current FTP transport
+- CFNetwork/CFFTP for the current FTP implementation
 - stream-based transfer
 - physical-device testing is authoritative
 
-Do not introduce Swift, ARC assumptions, modern-only APIs, or large third-party frameworks casually.
+Do not introduce Swift, ARC assumptions, modern-only APIs or large dependencies casually.
 
-## Authoritative integration contract
-
-Read `INTEGRATION.md` before making architectural changes.
-
-Canonical application-family flow:
+## Canonical application-family flow
 
 ```text
 FTP Server
@@ -50,62 +58,85 @@ All new FTP downloads must be written directly to:
 
 Create the directory if it does not exist.
 
-Do not use `/var/mobile/Media/iPad1FTPDownloads/` for new downloads.
-
-Do not create a second copy solely to make the file visible to iPad1Files.
-
-## Single physical file rule
-
-One transferred file = one physical file.
-
-Correct:
+Do not create new downloads in:
 
 ```text
-/var/mobile/Media/iPad1Files/Downloads/example.pdf
+/var/mobile/Media/iPad1FTPDownloads/
 ```
 
-Incorrect:
-
-```text
-/var/mobile/Media/iPad1FTPDownloads/example.pdf
-/var/mobile/Media/iPad1Files/Downloads/example.pdf
-```
+Do not copy a completed file into another app-owned directory merely for integration.
 
 ## Responsibility boundary
 
-### Keep here
+### Keep in iPad1FTPDownloader
 
 - FTP connection
-- remote folder browsing
+- remote directory browsing
 - download/upload
-- pause/resume
-- transfer progress/speed
+- pause/resume/cancel
+- retry
+- progress/speed/ETA
 - FIFO queue
+- saved servers
+- remote search/sorting
 - remote rename/delete
 - MKD/RMD
-- saved servers
-- remote search
-- sorting
+- transfer-oriented local results list
+- sibling-app path hand-off
 
 ### Leave to iPad1Files
 
 - advanced local copy/move
 - broad local folder management
 - favorites
-- filesystem-wide search
+- filesystem-wide local search
 - file classification
 - rich/general preview system
+- ZIP management
+- text editing
 - Open With registry
 
 ### Leave to iPad1PDFReader
 
 - PDF rendering
-- PDF reading features
-- page navigation/zoom/bookmarks/etc.
+- PDF page navigation
+- zoom/bookmarks/highlights/reader features
+
+## Remote path invariant
+
+Every remote **directory** path must:
+
+- start with `/`;
+- end with `/`;
+- represent root as exactly `/`.
+
+Use one canonical helper everywhere. Do not scatter manual slash fixes through controllers.
+
+Normalization must apply to:
+
+- manual entry;
+- current path state;
+- child navigation;
+- parent navigation;
+- refresh;
+- listing URL construction.
+
+Example:
+
+```text
+/domains/example.com/public_html/css/
+```
+
+not:
+
+```text
+domains/example.com/public_html/css
+/domains/example.com/public_html/css
+```
 
 ## PDF hand-off
 
-On completed `.pdf` transfer, use the same canonical file path:
+On completed `.pdf` transfer, offer the same canonical physical file through:
 
 ```text
 ipad1pdf://open?path=<percent-encoded-absolute-path>
@@ -119,70 +150,94 @@ Optional iPad1Files hand-off:
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-## Remote directory path invariant
+If the sibling scheme is unavailable, fail gracefully and leave the file untouched.
 
-Every remote directory path must:
+## Current roadmap order
 
-- start with `/`;
-- end with `/`.
+Do not skip ahead unless explicitly requested.
 
-Examples:
+### v1.3
 
-```text
-/
-/domains/
-/domains/example.com/
-/domains/example.com/public_html/
-```
+Integration and stabilization:
 
-Never let slashless directory state propagate internally.
+- canonical shared Downloads root;
+- single physical file rule;
+- centralized remote path invariant;
+- PDF/iPad1Files hand-off;
+- FTP regression testing;
+- lightweight local results screen.
 
-Normalization must apply to:
+### v1.4
 
-- manual path entry;
-- current path state;
-- child navigation;
-- parent navigation;
-- refresh;
-- URL construction.
+Transfer manager:
+
+- pause/resume/cancel;
+- queue;
+- retry;
+- progress/speed/ETA;
+- collision handling;
+- bounded metadata-only history.
+
+### v1.5
+
+FTP remote UX:
+
+- Saved Servers editor;
+- remote search/sort;
+- folder-first option;
+- remote metadata;
+- remote operations polish.
+
+### v1.6
+
+Sibling-app integration polish.
+
+### v1.7
+
+Keychain-backed saved credentials and related hardening.
+
+### SFTP/FTPS
+
+Experimental research only until physical-device profiling proves acceptable.
 
 ## Memory policy
 
 ### Safe
 
 - streamed reads/writes;
-- 8–16 KB class buffers;
-- small queue metadata;
+- small buffers around 8–16 KB class;
+- small queue/history metadata;
 - URL/path hand-offs.
 
 ### Caution
 
 - recursive remote search;
 - very long queues;
-- large previews.
+- heavy secure-protocol libraries.
 
 ### Do not add
 
 - whole-file RAM buffering;
+- rich local preview framework;
 - OCR;
 - AI/ML;
 - large background caches;
-- SMB feature expansion;
-- heavy SFTP libraries without profiling on the physical iPad 1.
+- SMB expansion;
+- heavy SFTP dependencies without profiling.
 
 ## SFTP / FTPS rule
 
-Do not claim SFTP or FTPS merely because UI, enums, stubs or integration points exist.
+Never claim SFTP or FTPS support because a stub, enum, UI control or integration point exists.
 
-- SFTP requires a real SSH/SFTP library such as libssh2 compiled for armv7/iOS 5.
-- FTPS requires a real TLS-capable FTP control/data implementation.
+For SFTP:
 
-Before integrating libssh2:
+1. build libssh2 for armv7/iOS 5 in a standalone proof-of-concept;
+2. link successfully;
+3. connect/list/download/upload;
+4. profile idle RAM, transfer RAM and CPU on physical iPad 1;
+5. integrate only if stable and lightweight enough.
 
-1. build a minimal proof-of-concept;
-2. confirm armv7/iOS 5 linkage;
-3. measure memory footprint on the physical iPad;
-4. only then integrate into the main app.
+FTPS must be researched independently with real TLS-aware FTP control/data channels.
 
 ## Coding style
 
@@ -190,21 +245,21 @@ Prefer:
 
 - small Objective-C classes;
 - explicit delegates;
-- UIKit/Foundation APIs available to iOS 5;
-- defensive error handling;
+- Foundation/UIKit APIs available to iOS 5;
 - explicit MRC ownership;
-- streamed network/file I/O;
-- canonical-path helper functions used everywhere.
+- defensive error handling;
+- streamed file/network I/O;
+- one shared path-normalization helper.
 
 Avoid:
 
-- duplicated path logic in multiple controllers;
-- rich local file-manager subsystems;
-- loading complete binary files for preview;
-- blocking network I/O on the main thread;
-- silent FTP server errors.
+- duplicated path logic;
+- hidden whole-file reads;
+- blocking network operations on the main thread;
+- swallowed FTP server errors;
+- local file-manager scope creep.
 
-## Build environment
+## Build
 
 Typical location:
 
@@ -212,41 +267,34 @@ Typical location:
 ~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
 ```
 
-Build:
-
 ```bash
 find . -type f -exec touch {} +
 make clean
 make package FINALPACKAGE=1
 ```
 
-The `touch` step helps avoid WSL/archive clock-skew warnings.
-
 ## Deployment
 
-Old iOS OpenSSH may require a per-command RSA compatibility flag:
+Legacy iOS OpenSSH may require:
 
 ```bash
 scp -o HostKeyAlgorithms=+ssh-rsa <package.deb> root@<IP>:/var/mobile/
 ssh -o HostKeyAlgorithms=+ssh-rsa root@<IP>
 ```
 
-Do not weaken the host SSH configuration globally when a command-local compatibility flag is sufficient.
+Use command-local legacy compatibility rather than weakening the development host globally.
 
-## Before making a release
+## Release checklist
 
 1. Read `INTEGRATION.md`.
 2. Build from a clean tree.
-3. Verify package version in `control` and `Info.plist`.
+3. Confirm package/version metadata.
 4. Install on physical iPad 1.
-5. Verify canonical shared Downloads root is used.
-6. Verify no duplicate copy exists.
-7. Verify child/parent directory navigation preserves leading/trailing slash invariant.
-8. Verify download/upload.
-9. Verify progress/speed.
-10. Verify pause/resume if changed.
-11. Verify queue if changed.
-12. Verify remote rename/delete/MKD/RMD if changed.
-13. Verify PDF hand-off opens the same physical file.
-14. Verify local UI has not expanded into iPad1Files scope.
-15. Update `CHANGELOG.md`, `SESSION.md`, `TASK.md`, and `TESTING.md` with actual results.
+5. Verify canonical shared download root.
+6. Verify no duplicate physical copy.
+7. Verify remote path invariant through child/parent/manual/refresh cases.
+8. Verify download/upload and remote commands.
+9. Verify transfer progress/speed and any changed transfer-manager behavior.
+10. Verify PDF hand-off uses the same physical file.
+11. Verify local UI remains transfer-oriented.
+12. Update `CHANGELOG.md`, `SESSION.md`, `TASK.md` and `TESTING.md` with actual results.
