@@ -2,25 +2,78 @@
 
 ## Overview
 
-iPad1FTPDownloader is a lightweight legacy FTP client designed specifically for first-generation iPads running iOS 5.1.1.
+iPad1FTPDownloader is the **network-transfer specialist** for the iPad 1 application family. It is designed for first-generation iPads running iOS 5.1.1 with 256 MB RAM.
 
-The architecture deliberately favors small Objective-C classes and framework APIs available on iOS 5 over modern abstractions.
+It must remain focused on remote FTP operations and efficient streamed transfer. General local filesystem management belongs to iPad1Files. PDF rendering belongs to iPad1PDFReader.
+
+## Platform constraints
+
+- iPad 1
+- 256 MB RAM
+- iOS 5.1.1
+- armv7
+- Objective-C
+- non-ARC / MRC
+- Theos
+- UIKit APIs available to iOS 5
+- CFNetwork / CFFTP
+- stream-based transfers
+
+## Application-family flow
+
+```text
+FTP Server
+   ↓
+iPad1FTPDownloader
+   ↓
+/var/mobile/Media/iPad1Files/Downloads/
+   ↓
+iPad1Files
+   ↓
+iPad1PDFReader
+```
+
+## Shared storage boundary
+
+Canonical local download root:
+
+```text
+/var/mobile/Media/iPad1Files/Downloads/
+```
+
+The directory must be created if missing.
+
+The old path:
+
+```text
+/var/mobile/Media/iPad1FTPDownloads/
+```
+
+is deprecated for new downloads.
+
+### Single physical file invariant
+
+A completed transfer is stored once, directly at its canonical location.
+
+Do not copy the same file into a second app-owned folder.
 
 ## Layers
 
 ### UI layer
 
-Primary responsibilities:
+Responsibilities:
 
-- Connection fields
-- Current remote path
-- Directory table
-- Search/sort controls
-- Transfer progress
-- Local Downloads browser
-- Error/status feedback
+- connection fields;
+- current remote path;
+- remote directory table;
+- remote search/sort controls;
+- transfer progress/speed;
+- queue status;
+- lightweight list of completed local downloads;
+- hand-off actions;
+- error/status feedback.
 
-The UI must never assume modern Auto Layout or post-iOS-5 controls.
+The UI must not grow into a general-purpose file manager.
 
 ### FTP browsing layer
 
@@ -28,11 +81,11 @@ The UI must never assume modern Auto Layout or post-iOS-5 controls.
 
 Responsibilities:
 
-- Build FTP directory URLs
-- Apply username/password
-- Read directory-listing stream
-- Parse server listing into file/folder items
-- Return items through a delegate
+- build FTP directory URLs;
+- apply credentials;
+- read listing streams;
+- parse listing items;
+- return files/folders through a delegate.
 
 Critical invariant:
 
@@ -40,7 +93,16 @@ Critical invariant:
 remote directory path starts with / and ends with /
 ```
 
-Directory normalization must happen before state is stored, not only immediately before a network request.
+Normalization must happen before directory state is stored, not merely before URL creation.
+
+The invariant applies to:
+
+- manual path entry;
+- current path state;
+- child navigation;
+- parent navigation;
+- refresh;
+- URL construction.
 
 ### Download layer
 
@@ -48,17 +110,19 @@ Directory normalization must happen before state is stored, not only immediately
 
 Responsibilities:
 
-- Open CFFTP read stream
-- Stream bytes directly into a local file
-- Report progress and speed
-- Support transfer offset/resume where the FTP server and CFNetwork behavior permit it
-- Close streams safely on finish/failure/pause
+- open CFFTP read stream;
+- stream directly to the canonical local path;
+- report progress/speed;
+- support pause/resume using transfer offsets where supported;
+- close streams safely.
 
-Local target directory:
+Local target root:
 
 ```text
-/var/mobile/Media/iPad1FTPDownloads/
+/var/mobile/Media/iPad1Files/Downloads/
 ```
+
+No post-download copy to iPad1Files is permitted.
 
 ### Upload layer
 
@@ -66,10 +130,12 @@ Local target directory:
 
 Responsibilities:
 
-- Read local files incrementally
-- Write to FTP output stream
-- Report sent bytes and speed
-- Avoid whole-file buffering
+- read local file incrementally;
+- write to FTP output stream;
+- report sent bytes and speed;
+- avoid whole-file buffering.
+
+Uploads may originate from the shared Downloads path or a path explicitly handed in by iPad1Files.
 
 ### Remote command layer
 
@@ -77,99 +143,145 @@ Responsibilities:
 
 Responsibilities:
 
-- FTP control-channel commands not conveniently covered by CFFTP streams
-- Remote file deletion (`DELE`)
-- Empty-directory removal (`RMD`)
-- Directory creation (`MKD`)
-- Rename (`RNFR` / `RNTO`)
+- remote file delete (`DELE`);
+- empty-directory remove (`RMD`);
+- directory create (`MKD`);
+- rename (`RNFR` / `RNTO`).
 
-This code must surface server permission/reply errors rather than hiding them.
+These are remote/network operations and therefore remain part of iPad1FTPDownloader.
 
 ### Transfer queue
 
 `TransferQueue`
 
-Development responsibility:
+Responsibilities:
 
-- Store pending transfer items
-- Provide FIFO semantics
-- Allow a completed/failed transfer to advance to the next queued transfer
+- store transfer metadata only;
+- FIFO semantics;
+- advance after finish/failure;
+- avoid retaining file contents in memory.
 
-Queue persistence across app relaunch is not yet considered complete unless explicitly implemented and tested.
+Very long queues require profiling because the device has only 256 MB RAM.
 
-### Local files / preview
+### Lightweight local downloads view
 
-`LocalFilesController` and `PreviewController`
+Allowed responsibilities:
 
-Target preview types:
+- list downloaded files;
+- show transfer result;
+- invoke file hand-off/open actions.
 
-- TXT / LOG / CSV
-- JPG / JPEG / PNG / GIF
-- HTML
-- PDF
+Not owned here:
 
-Avoid reading large binary files fully into RAM. UIWebView or streamed/native file loading is preferable for legacy compatibility.
+- advanced local copy/move;
+- general folder management;
+- favorites;
+- filesystem-wide search;
+- classification;
+- rich preview framework;
+- Open With registry.
+
+Those belong to iPad1Files.
+
+## PDF hand-off
+
+When a completed file is `.pdf`, the app may offer:
+
+```text
+PDFReader ile Aç
+```
+
+using:
+
+```text
+ipad1pdf://open?path=<percent-encoded-absolute-path>
+```
+
+The same physical file path must be handed off. Do not copy it.
+
+## iPad1Files hand-off
+
+Optional scheme:
+
+```text
+ipad1files://show?path=<percent-encoded-absolute-path>
+```
+
+Use this for **Dosyalarda Göster** when available.
 
 ## Saved servers
 
-Saved server profiles may contain:
+Saved profile fields may include:
 
-- Display name
-- Host
-- Port
-- Username
-- Password
-- Initial path
+- display name;
+- host;
+- port;
+- username;
+- password;
+- initial path.
 
-Current simple persistence should be considered a usability mechanism, not a hardened secret-storage design. A future security improvement should use an iOS-5-compatible Keychain implementation.
+Credential storage should eventually use an iOS-5-compatible Keychain implementation.
 
 ## Secure protocol boundary
 
 ### FTP
 
-Implemented transport family using CFNetwork/CFFTPStream and a small FTP command client.
+Implemented using CFNetwork/CFFTPStream plus a small FTP command client.
 
 ### SFTP
 
-Not provided by CFFTPStream. Requires a real SSH/SFTP library such as libssh2 compiled for armv7 and the target iOS SDK.
+Not provided by CFFTPStream. Requires a real SSH/SFTP library such as libssh2 compiled for armv7/iOS 5.
+
+Do not integrate a heavy SFTP dependency without profiling on the physical iPad 1.
 
 ### FTPS
 
-Requires a TLS-aware FTP transport capable of handling both control and data channels. Do not equate ordinary FTP-over-CFNetwork with full FTPS support.
+Requires a TLS-aware FTP control/data implementation. Do not equate plain CFFTPStream with complete FTPS support.
 
-## Memory constraints
+## Memory policy
 
-iPad 1 has very limited RAM by modern standards. Architecture rules:
+### Safe
 
-- Stream network transfers.
-- Use small buffers.
-- Release temporary objects aggressively under MRC.
-- Avoid caching remote directory trees unnecessarily.
-- Avoid rendering oversized images at original resolution when a scaled preview can be used.
-- Test repeated transfers/navigation on the physical device for leaks and crashes.
+- streaming download/upload;
+- 8–16 KB class transfer buffers;
+- queue metadata;
+- path/URL hand-off.
+
+### Caution
+
+- recursive remote search;
+- very long transfer queues;
+- previewing large files.
+
+### Forbidden by architecture
+
+- loading an entire transfer into RAM;
+- OCR;
+- AI/ML;
+- large background caches;
+- duplicate physical copies created solely for app integration;
+- heavy SMB/SFTP libraries without measured profiling.
 
 ## Build/deployment topology
 
-Development host:
-
 ```text
 Windows + WSL Ubuntu + Theos
+        ↓
+      .deb
+        ↓
+      SCP
+        ↓
+jailbroken iPad 1
+        ↓
+     dpkg -i
 ```
 
-Build output:
+Legacy SSH may require per-command `HostKeyAlgorithms=+ssh-rsa`.
 
-```text
-.deb package
-```
+## Ownership decision rule
 
-Deployment:
+- Primarily network transfer → **iPad1FTPDownloader**
+- Primarily general local file management → **iPad1Files**
+- Primarily PDF reading/rendering → **iPad1PDFReader**
 
-```text
-WSL -> SCP -> jailbroken iPad -> dpkg -i -> SpringBoard refresh
-```
-
-Legacy OpenSSH compatibility may require a per-command `HostKeyAlgorithms=+ssh-rsa` option.
-
-## Compatibility-first decision rule
-
-When choosing between a cleaner modern implementation and a simpler implementation proven to work on iOS 5.1.1, prefer the latter unless there is a measurable reliability/security reason not to.
+Integration should be through canonical shared paths and lightweight hand-offs, not duplicated subsystems.
