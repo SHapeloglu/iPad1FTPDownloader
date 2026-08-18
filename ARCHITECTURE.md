@@ -57,7 +57,7 @@ A completed transfer is stored once, directly at its canonical location.
 
 Do not copy the same file into a second app-owned folder.
 
-## Layers
+## Core layers
 
 ### UI layer
 
@@ -68,12 +68,35 @@ Responsibilities:
 - remote directory table;
 - remote search/sort controls;
 - transfer progress/speed;
-- queue status;
-- lightweight list of completed local downloads;
-- hand-off actions;
+- transfer queue state;
+- lightweight list of completed downloads;
+- sibling-app hand-off actions;
 - error/status feedback.
 
 The UI must not grow into a general-purpose file manager.
+
+### Canonical remote-path helper
+
+One shared helper must normalize remote **directory** paths before they are stored or used.
+
+Invariant:
+
+```text
+starts with /
+ends with /
+root is exactly /
+```
+
+The same helper must be used by:
+
+- manual path entry;
+- current-path assignment;
+- child-directory navigation;
+- parent navigation;
+- refresh;
+- FTP URL construction.
+
+Do not duplicate path-fixing logic across controllers.
 
 ### FTP browsing layer
 
@@ -81,28 +104,13 @@ The UI must not grow into a general-purpose file manager.
 
 Responsibilities:
 
-- build FTP directory URLs;
+- build FTP directory URLs from already-normalized directory paths;
 - apply credentials;
-- read listing streams;
-- parse listing items;
-- return files/folders through a delegate.
+- read directory-listing streams;
+- parse server listing into file/folder metadata;
+- return items through a delegate.
 
-Critical invariant:
-
-```text
-remote directory path starts with / and ends with /
-```
-
-Normalization must happen before directory state is stored, not merely before URL creation.
-
-The invariant applies to:
-
-- manual path entry;
-- current path state;
-- child navigation;
-- parent navigation;
-- refresh;
-- URL construction.
+Do not recursively cache the full server tree.
 
 ### Download layer
 
@@ -111,16 +119,11 @@ The invariant applies to:
 Responsibilities:
 
 - open CFFTP read stream;
-- stream directly to the canonical local path;
-- report progress/speed;
-- support pause/resume using transfer offsets where supported;
-- close streams safely.
-
-Local target root:
-
-```text
-/var/mobile/Media/iPad1Files/Downloads/
-```
+- stream directly to `/var/mobile/Media/iPad1Files/Downloads/`;
+- create the canonical local directory if needed;
+- report progress and speed;
+- support pause/resume using FTP transfer offsets where server/CFNetwork support permits it;
+- close streams safely on finish/failure/pause/cancel.
 
 No post-download copy to iPad1Files is permitted.
 
@@ -130,12 +133,12 @@ No post-download copy to iPad1Files is permitted.
 
 Responsibilities:
 
-- read local file incrementally;
+- read local files incrementally;
 - write to FTP output stream;
 - report sent bytes and speed;
 - avoid whole-file buffering.
 
-Uploads may originate from the shared Downloads path or a path explicitly handed in by iPad1Files.
+Uploads may originate from the canonical shared Downloads root or from a local path explicitly handed in by iPad1Files.
 
 ### Remote command layer
 
@@ -143,33 +146,32 @@ Uploads may originate from the shared Downloads path or a path explicitly handed
 
 Responsibilities:
 
-- remote file delete (`DELE`);
-- empty-directory remove (`RMD`);
-- directory create (`MKD`);
-- rename (`RNFR` / `RNTO`).
+- `DELE` remote file delete;
+- `RMD` empty-directory remove;
+- `MKD` directory creation;
+- `RNFR` / `RNTO` rename.
 
-These are remote/network operations and therefore remain part of iPad1FTPDownloader.
+These operations stay in iPad1FTPDownloader because they are remote FTP operations.
 
-### Transfer queue
+### Transfer manager
 
-`TransferQueue`
+`TransferQueue` and related transfer-state code own:
 
-Responsibilities:
+- metadata-only FIFO queue;
+- current transfer state;
+- pause/resume/cancel/retry;
+- advancement to the next queued item;
+- small transfer history if implemented.
 
-- store transfer metadata only;
-- FIFO semantics;
-- advance after finish/failure;
-- avoid retaining file contents in memory.
-
-Very long queues require profiling because the device has only 256 MB RAM.
+The queue must never retain file contents.
 
 ### Lightweight local downloads view
 
 Allowed responsibilities:
 
-- list downloaded files;
-- show transfer result;
-- invoke file hand-off/open actions.
+- list completed downloads;
+- show basic transfer result information;
+- request open/hand-off actions.
 
 Not owned here:
 
@@ -178,14 +180,16 @@ Not owned here:
 - favorites;
 - filesystem-wide search;
 - classification;
-- rich preview framework;
+- rich/general preview framework;
+- ZIP management;
+- text editing;
 - Open With registry.
 
-Those belong to iPad1Files.
+Those belong to iPad1Files or a sibling specialist application.
 
 ## PDF hand-off
 
-When a completed file is `.pdf`, the app may offer:
+When a completed file has a `.pdf` extension, the app may offer:
 
 ```text
 PDFReader ile Aç
@@ -197,7 +201,7 @@ using:
 ipad1pdf://open?path=<percent-encoded-absolute-path>
 ```
 
-The same physical file path must be handed off. Do not copy it.
+The same canonical physical file must be opened. Never copy it merely for hand-off.
 
 ## iPad1Files hand-off
 
@@ -207,7 +211,7 @@ Optional scheme:
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-Use this for **Dosyalarda Göster** when available.
+Use this for **Dosyalarda Göster** when the sibling app supports it.
 
 ## Saved servers
 
@@ -218,32 +222,45 @@ Saved profile fields may include:
 - port;
 - username;
 - password;
-- initial path.
+- initial remote path.
 
 Credential storage should eventually use an iOS-5-compatible Keychain implementation.
 
-## Secure protocol boundary
+## FTP UX scope
 
-### FTP
+The following remain first-class product responsibilities:
 
-Implemented using CFNetwork/CFFTPStream plus a small FTP command client.
+- FTP connection;
+- remote browse;
+- download/upload;
+- pause/resume/cancel;
+- queue/retry;
+- progress/speed/ETA;
+- saved servers;
+- remote search;
+- sorting;
+- rename/delete/MKD/RMD.
+
+## Secure protocol research boundary
 
 ### SFTP
 
 Not provided by CFFTPStream. Requires a real SSH/SFTP library such as libssh2 compiled for armv7/iOS 5.
 
-Do not integrate a heavy SFTP dependency without profiling on the physical iPad 1.
+SFTP integration is experimental until a standalone proof-of-concept has been built and profiled on the physical iPad 1.
 
 ### FTPS
 
-Requires a TLS-aware FTP control/data implementation. Do not equate plain CFFTPStream with complete FTPS support.
+Requires a TLS-aware FTP control/data implementation. It must be researched separately from SFTP.
+
+Do not claim FTPS merely because plain CFFTPStream works.
 
 ## Memory policy
 
 ### Safe
 
 - streaming download/upload;
-- 8–16 KB class transfer buffers;
+- small transfer buffers, approximately 8–16 KB class;
 - queue metadata;
 - path/URL hand-off.
 
@@ -251,16 +268,19 @@ Requires a TLS-aware FTP control/data implementation. Do not equate plain CFFTPS
 
 - recursive remote search;
 - very long transfer queues;
-- previewing large files.
+- excessive history retention;
+- heavy secure-protocol dependencies.
 
 ### Forbidden by architecture
 
-- loading an entire transfer into RAM;
+- loading complete transferred files into RAM;
+- duplicate physical files created solely for app integration;
+- general rich-preview subsystem;
 - OCR;
 - AI/ML;
 - large background caches;
-- duplicate physical copies created solely for app integration;
-- heavy SMB/SFTP libraries without measured profiling.
+- SMB expansion;
+- heavy SFTP libraries without measured physical-device profiling.
 
 ## Build/deployment topology
 
@@ -284,4 +304,4 @@ Legacy SSH may require per-command `HostKeyAlgorithms=+ssh-rsa`.
 - Primarily general local file management → **iPad1Files**
 - Primarily PDF reading/rendering → **iPad1PDFReader**
 
-Integration should be through canonical shared paths and lightweight hand-offs, not duplicated subsystems.
+Integration must use canonical shared paths and lightweight hand-offs, not duplicated subsystems or duplicated files.
