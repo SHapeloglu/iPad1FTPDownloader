@@ -2,89 +2,170 @@
 
 ## Product direction
 
-Build a practical **legacy file client for iPad 1 / iOS 5.1.1**, prioritizing reliability and low memory usage over feature count.
+Build a focused **network-transfer specialist** for iPad 1 / iOS 5.1.1.
 
-## v1.3 — stabilization
+iPad1FTPDownloader must remain small, stream-oriented and reliable on a 256 MB device. General local file management belongs to iPad1Files. PDF reading belongs to iPad1PDFReader.
 
-Primary objective: make the current FTP client dependable.
+Canonical flow:
 
-Planned / under verification:
+```text
+FTP Server
+   ↓
+iPad1FTPDownloader
+   ↓
+/var/mobile/Media/iPad1Files/Downloads/
+   ↓
+iPad1Files
+   ↓
+iPad1PDFReader
+```
 
-- Central remote-path normalization
-- Reliable parent navigation
-- Local Downloads browser
-- Search
-- Sort
-- Basic preview
-- Pause/resume
-- Transfer queue
-- Regression testing for upload/download/remote file operations
+## v1.3 — integration and stabilization
+
+Primary objective: align the current code with `INTEGRATION.md` before adding more scope.
+
+Required work:
+
+- Change canonical download root to `/var/mobile/Media/iPad1Files/Downloads/`.
+- Create the shared Downloads directory automatically.
+- Stop creating new downloads under `/var/mobile/Media/iPad1FTPDownloads/`.
+- Enforce one-file/one-physical-location behavior.
+- Centralize remote-directory normalization.
+- Guarantee leading `/` and trailing `/` for every remote directory path.
+- Fix child navigation, parent navigation, refresh and manual path entry with the same invariant.
+- Keep upload/download/rename/delete/MKD/RMD regressions working.
+- Add PDFReader hand-off using `ipad1pdf://open?path=...`.
+- Add optional iPad1Files hand-off using `ipad1files://show?path=...`.
+- Keep the local Downloads screen lightweight; remove/avoid rich preview and general file-manager scope.
 
 Release only after physical-device verification.
 
-## v1.4 — transfer manager and UX
+## v1.4 — transfer manager
 
-Potential scope:
+Primary objective: make long and unreliable transfers comfortable on the iPad 1.
 
-- Persistent transfer history
-- Cancel transfer
-- Better queue management
-- Retry failed transfer
-- Clearer ETA/speed presentation
-- User-selectable overwrite/resume behavior
-- Better human-readable local file metadata
-- Optional folder-first sorting
-- Improved saved-server editor
-- Keychain-backed credential storage
+Planned scope:
 
-## v1.5 — SFTP proof of concept
+- Pause download.
+- Resume using FTP REST/transfer offsets where supported.
+- Cancel transfer.
+- FIFO transfer queue.
+- Retry failed transfer.
+- Progress percentage.
+- Transfer speed.
+- ETA where it can be estimated cheaply.
+- Overwrite / Resume / Rename choice for local collisions.
+- Transfer history kept small and metadata-only.
+- Connection-loss recovery and clear failure state.
+- Bounded queue size to protect memory.
 
-Do not begin full SFTP UI work until a minimal libssh2 proof of concept succeeds on the target.
+All transfer implementations must remain stream-based and avoid whole-file buffering.
 
-Milestones:
+## v1.5 — FTP remote UX completion
 
-1. Cross-compile libssh2 for armv7/iOS 5 toolchain.
-2. Link into a minimal Theos application.
-3. Connect/authenticate against a test SSH server.
-4. List a directory.
-5. Download a file.
-6. Upload a file.
-7. Only then integrate with the main browser/transfer UI.
+Primary objective: complete the FTP-specific user experience without expanding into local file-manager territory.
 
-## v1.6 — secure-protocol integration
+Planned scope:
 
-If v1.5 succeeds:
+- Improved Saved Servers editor.
+- Edit/delete server profiles.
+- Remote filename/folder search.
+- A→Z / Z→A sorting.
+- Optional folder-first sorting.
+- Human-readable remote file sizes.
+- Remote date/time metadata where listing format permits it.
+- Rename.
+- Delete.
+- MKD / RMD.
+- Upload target selection.
+- Small transfer-oriented multi-select only if memory/profile testing supports it.
 
-- Saved protocol per server profile
-- SFTP browse/download/upload
-- SFTP rename/delete/mkdir
-- Password authentication
-- Evaluate SSH public-key authentication compatible with legacy target
+Recursive remote search must be bounded/cancellable and should not cache an entire remote tree.
 
-## FTPS research track
+## v1.6 — sibling-app hand-off polish
 
-FTPS is separate from SFTP and should not share an implementation merely because both are secure transports.
+Primary objective: make the three-app workflow feel seamless without copying files.
 
-Research:
+Planned scope:
 
-- Explicit FTP over TLS
-- Implicit FTPS if needed
-- TLS compatibility with contemporary servers
-- Certificate validation behavior on iOS 5
-- Separate control/data channel handling
+- Detect completed `.pdf` files case-insensitively.
+- `PDFReader ile Aç` action.
+- Percent-encode the same canonical absolute path.
+- Gracefully handle missing `ipad1pdf://` support.
+- `Dosyalarda Göster` through `ipad1files://show?path=...` when available.
+- Do not duplicate the file during any hand-off.
+- Allow upload to accept a path handed in by iPad1Files when that integration is defined.
 
-If contemporary TLS requirements make a safe/maintainable iOS 5 implementation impractical, document that limitation instead of shipping misleading support.
+## v1.7 — saved credential hardening
 
-## Long-term optional features
+Primary objective: improve credential handling without increasing memory or dependency cost materially.
 
-- ZIP extraction
-- More local file operations
-- Lightweight text editor
-- Image scaling/rotation preview
-- Integration with the separate legacy PDF-reader work
-- Simple HTTP/HTTPS downloader mode
-- WebDAV if a lightweight compatible implementation proves practical
+Planned scope:
 
-## Non-goals
+- iOS-5-compatible Keychain storage.
+- Option not to save password.
+- Anonymous FTP support/polish.
+- Safe update/delete of stored credentials.
+- Preserve backward compatibility with existing saved profiles where practical.
 
-Unless hardware testing proves otherwise, avoid turning the project into a heavy modern file manager with large cloud SDKs or background services. The product advantage is that it remains useful on a 2010-era iPad.
+## Experimental research — SFTP
+
+SFTP is **not** a required release milestone.
+
+Do not integrate libssh2 directly into the main app first.
+
+Research sequence:
+
+1. Cross-compile a suitable libssh2 build for armv7/iOS 5.
+2. Link it into a minimal standalone Theos proof-of-concept.
+3. Connect/authenticate to a test server.
+4. List one directory.
+5. Download one file by streaming.
+6. Upload one file by streaming.
+7. Measure idle RAM, transfer RAM and CPU on the physical iPad 1.
+8. Integrate only if the measured cost is acceptable.
+
+If SFTP materially harms stability or memory headroom, keep it out of the product.
+
+## Experimental research — FTPS
+
+FTPS is separate from SFTP and requires its own TLS-aware FTP control/data transport.
+
+Research only after the main FTP roadmap is stable:
+
+- explicit FTP over TLS;
+- implicit FTPS only if needed;
+- certificate-validation behavior on iOS 5;
+- contemporary server/TLS compatibility;
+- memory and CPU cost;
+- control/data-channel TLS handling.
+
+If safe modern interoperability is impractical on iOS 5, document the limitation rather than shipping misleading support.
+
+## Explicit non-goals
+
+Do not add to iPad1FTPDownloader:
+
+- general local copy/move;
+- broad folder management;
+- favorites;
+- filesystem-wide local search;
+- file classification;
+- rich/general preview framework;
+- full PDF rendering/reader features;
+- ZIP manager/extractor as a general file feature;
+- text editor;
+- Open With registry;
+- SMB client expansion;
+- OCR;
+- AI/ML;
+- large background caches;
+- whole-file RAM buffering.
+
+## Product rule
+
+- Network transfer problem → iPad1FTPDownloader.
+- Local filesystem problem → iPad1Files.
+- PDF reading/rendering problem → iPad1PDFReader.
+
+This boundary is more important than feature count.
