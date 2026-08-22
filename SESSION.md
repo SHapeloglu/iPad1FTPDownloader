@@ -14,10 +14,10 @@ Typical local project path:
 ~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
 ```
 
-Latest observed iPad IP:
+Current observed iPad IP:
 
 ```text
-192.168.1.4
+192.168.1.2
 ```
 
 The IP can change. Verify before deployment.
@@ -48,18 +48,37 @@ Added FTP directory browsing and tap-to-download. Physical-device testing confir
 
 Added upload, saved-server work, transfer progress/speed and remote file-operation infrastructure. Upload progress reached 100% on physical iPad 1.
 
-## Known remote-path bug
+### v1.3 current verification
 
-On iOS 5 CFNetwork, FTP directory listing may fail unless the remote directory path ends with `/`.
-
-Required invariant:
+On 2026-08-22 the current v1.3 source was pulled from `main`, clean-built with the legacy Theos/iOS 5 target and packaged successfully as:
 
 ```text
-all remote directories start with / and end with /
+packages/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb
+```
+
+The package was installed on the physical iPad 1 at `192.168.1.2`.
+
+Physical-device navigation test passed for:
+
+- entering child directories without manually adding `/`;
+- entering nested child directories;
+- returning with `← Üst Klasör`;
+- repeated parent navigation back to `/`;
+- no manual trailing-slash correction during that child/parent flow.
+
+The centralized `FTPPathUtils` path-normalization change is therefore physically verified for child/parent navigation. Manual path-entry and independent refresh regression cases are still to be tested separately.
+
+## Remote path invariant
+
+Every remote FTP directory path must:
+
+```text
+start with /
+end with /
 root is exactly /
 ```
 
-An earlier URL-only slash patch was insufficient because internal application state still stored slashless paths. The fix must be centralized and used for manual entry, current-path assignment, child navigation, parent navigation, refresh and FTP URL construction.
+The normalization helper is centralized in `FTPPathUtils` and used by the UI/controller and `FTPBrowser` path construction.
 
 ## Authoritative integration architecture
 
@@ -101,9 +120,17 @@ One transferred file = one physical file. Never copy it merely to integrate with
 
 ## Current v1.3 source state
 
-The prepared v1.3 integration source includes the canonical Downloads root and same-path PDF/iPad1Files completion hand-off code. It must still be treated as **development/unverified** until the exact source builds and passes physical-device testing.
+The current v1.3 source now clean-builds and installs on the physical iPad 1. Child/parent remote-directory navigation has passed physical-device testing after central path normalization.
 
-Do not claim a feature works solely because source code exists.
+Still unverified in this exact build:
+
+- canonical Downloads root by performing a new real download;
+- one-file/no-duplicate rule on device;
+- upload and remote-command regressions;
+- PDF completion hand-off;
+- new download destination preference + iPad1Files folder-picker callback.
+
+Do not claim those features work until tested on the physical device.
 
 ## Newly agreed download destination UX
 
@@ -314,42 +341,31 @@ Do not add:
 
 ## Immediate next action
 
-Continue from the actual v1.3 source and implement/verify in this order:
+Continue from the physically installed v1.3 build and verify in this order:
 
-1. confirm canonical download root is used everywhere;
-2. confirm the shared Downloads directory is auto-created;
-3. centralize and verify remote directory normalization;
-4. compile cleanly with legacy Theos/iOS 5 target;
-5. install on physical iPad 1;
-6. test child and parent navigation with no manual `/` correction;
-7. test download/upload/regression features;
-8. test PDF completion hand-off;
-9. implement the new download destination preference + iPad1Files folder-picker callback;
-10. update docs only with physically verified results.
+1. perform a real download and confirm the file is created under `/var/mobile/Media/iPad1Files/Downloads/`;
+2. confirm no duplicate copy is created under `/var/mobile/Media/iPad1FTPDownloads/`;
+3. test manual remote path entry and independent refresh normalization;
+4. test upload/progress/speed and remote command regressions;
+5. test PDF completion hand-off;
+6. implement the new download destination preference + iPad1Files folder-picker callback;
+7. update docs only with physically verified results.
 
-Local build start:
+## Deployment
 
-```bash
-cd ~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
-pwd
-ls
-find . -type f -exec touch {} +
-make clean
-make package FINALPACKAGE=1
-```
-
-Latest observed deployment address:
+Current observed iPad address:
 
 ```text
-192.168.1.4
+192.168.1.2
 ```
 
 Example copy:
 
 ```bash
 scp -o HostKeyAlgorithms=+ssh-rsa \
+-o PubkeyAcceptedAlgorithms=+ssh-rsa \
 packages/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb \
-root@192.168.1.4:/var/mobile/
+root@192.168.1.2:/var/mobile/
 ```
 
 ## Terminal reminder
