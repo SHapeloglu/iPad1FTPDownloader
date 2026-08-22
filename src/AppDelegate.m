@@ -1,4 +1,5 @@
 #import "AppDelegate.h"
+#import "FTPPathUtils.h"
 #import <CoreFoundation/CoreFoundation.h>
 #define SERVERS_KEY @"SavedFTPServersV12"
 #define DOWNLOADS @"/var/mobile/Media/iPad1Files/Downloads"
@@ -30,21 +31,11 @@
  return ok;
 }
 - (void)capture{[_host release];[_username release];[_password release];_host=[[_hostField.text stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]]copy];_username=[_userField.text copy];_password=[_passField.text copy];_port=[_portField.text integerValue];if(_port<=0||_port>65535)_port=21;}
-- (NSString*)normalizedDirectoryPath:(NSString*)path {
- NSString*p=[path stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceAndNewlineCharacterSet]];
- if(![p length])return @"/";
- if(![p hasPrefix:@"/"])p=[@"/" stringByAppendingString:p];
- while([p rangeOfString:@"//"].location!=NSNotFound)p=[p stringByReplacingOccurrencesOfString:@"//" withString:@"/"];
- if(![p isEqualToString:@"/"]&&![p hasSuffix:@"/"])p=[p stringByAppendingString:@"/"];
- return p;
-}
-- (NSString*)remotePathForName:(NSString*)n {
- NSString*base=[self normalizedDirectoryPath:_currentPath];
- return [base stringByAppendingString:n];
-}
-- (NSString*)remoteDirectoryPathForName:(NSString*)n { return [self normalizedDirectoryPath:[self remotePathForName:n]]; }
+- (NSString*)normalizedDirectoryPath:(NSString*)path { return [FTPPathUtils normalizedRemoteDirectoryPath:path]; }
+- (NSString*)remotePathForName:(NSString*)n { return [FTPPathUtils remotePathForName:n inDirectory:_currentPath]; }
+- (NSString*)remoteDirectoryPathForName:(NSString*)n { return [FTPPathUtils normalizedRemoteDirectoryPath:[self remotePathForName:n]]; }
 - (void)setCurrentDirectoryPath:(NSString*)path {
- NSString*p=[self normalizedDirectoryPath:path];
+ NSString*p=[FTPPathUtils normalizedRemoteDirectoryPath:path];
  [_currentPath release];_currentPath=[p copy];_pathField.text=_currentPath;_upButton.enabled=![_currentPath isEqualToString:@"/"];
 }
 - (void)refresh{if([_host length]){[self setCurrentDirectoryPath:_currentPath];[_browser listHost:_host port:_port username:_username password:_password path:_currentPath];}}
