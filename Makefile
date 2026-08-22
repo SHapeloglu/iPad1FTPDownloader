@@ -8,6 +8,7 @@ APPLICATION_NAME = iPad1FTPDownloader
 iPad1FTPDownloader_FILES = \
     src/main.m \
     src/AppDelegate.m \
+    src/FTPPathUtils.m \
     src/FTPDownloader.m \
     src/FTPUploader.m \
     src/FTPBrowser.m \
