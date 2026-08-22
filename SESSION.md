@@ -2,7 +2,7 @@
 
 ## Latest hand-off
 
-Date: 2026-08-18
+Date: 2026-08-22
 
 ## Working context
 
@@ -14,13 +14,25 @@ Typical local project path:
 ~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
 ```
 
-Typical iPad development IP observed recently:
+Latest observed iPad IP:
 
 ```text
-192.168.1.2
+192.168.1.4
 ```
 
 The IP can change. Verify before deployment.
+
+## Platform constraints — do not change
+
+- iPad 1
+- 256 MB RAM
+- iOS 5.1.1
+- armv7
+- Objective-C
+- non-ARC / MRC
+- Theos
+- CFNetwork / CFFTP
+- stream-based transfer
 
 ## Confirmed history
 
@@ -34,7 +46,7 @@ Added FTP directory browsing and tap-to-download. Physical-device testing confir
 
 ### v1.2
 
-Added upload, saved-server work, transfer progress/speed and remote file-operation infrastructure. Upload progress reached 100% on the physical iPad.
+Added upload, saved-server work, transfer progress/speed and remote file-operation infrastructure. Upload progress reached 100% on physical iPad 1.
 
 ## Known remote-path bug
 
@@ -47,18 +59,9 @@ all remote directories start with / and end with /
 root is exactly /
 ```
 
-An earlier patch that only appended `/` to the final FTP URL was insufficient because application state could still contain slashless directory paths.
+An earlier URL-only slash patch was insufficient because internal application state still stored slashless paths. The fix must be centralized and used for manual entry, current-path assignment, child navigation, parent navigation, refresh and FTP URL construction.
 
-The correct fix is to centralize normalization and use it for:
-
-- manual path entry;
-- current path assignment;
-- child navigation;
-- parent navigation;
-- refresh;
-- FTP listing URL construction.
-
-## Authoritative integration decision
+## Authoritative integration architecture
 
 iPad1FTPDownloader is the **network-transfer specialist** in the iPad 1 app family.
 
@@ -78,13 +81,13 @@ iPad1PDFReader
 
 ### Canonical download root
 
-New downloads must go directly to:
+New downloads go directly to:
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-Create the directory automatically when missing.
+Create this directory when missing.
 
 Do not create new downloads under:
 
@@ -94,27 +97,87 @@ Do not create new downloads under:
 
 ### Single physical file rule
 
-A transferred file has one physical copy. Do not copy it again into iPad1Files after completion.
+One transferred file = one physical file. Never copy it merely to integrate with iPad1Files or iPad1PDFReader.
 
-### PDF hand-off
+## Current v1.3 source state
 
-For completed `.pdf` files:
+The prepared v1.3 integration source includes the canonical Downloads root and same-path PDF/iPad1Files completion hand-off code. It must still be treated as **development/unverified** until the exact source builds and passes physical-device testing.
+
+Do not claim a feature works solely because source code exists.
+
+## Newly agreed download destination UX
+
+iPad1FTPDownloader owns the **preference**; iPad1Files owns the actual folder-picker UI.
+
+Planned modes:
+
+```text
+Son kullanılan klasör
+Her indirmede sor
+Her zaman Downloads'a indir
+```
+
+When the user chooses another folder, FTPDownloader should call:
+
+```text
+ipad1files://pickFolder?root=<encoded-root>&callback=<encoded-callback>
+```
+
+Recommended root:
+
+```text
+/var/mobile/Media/iPad1Files/Downloads/
+```
+
+Return callback:
+
+```text
+ipad1ftp://folderSelected?path=<percent-encoded-absolute-path>
+```
+
+FTPDownloader must validate that the returned path stays under the canonical Downloads root before starting transfer.
+
+The last selected folder may be stored as lightweight metadata. Server-specific last download folder is also acceptable if it remains simple.
+
+## PDF completion UX
+
+When a completed file is `.pdf` (case-insensitive), the desired UI is:
+
+```text
+İndirme tamamlandı
+
+PDFReader ile Aç
+Dosyalarda Göster
+Tamam
+```
+
+PDF hand-off:
 
 ```text
 ipad1pdf://open?path=<percent-encoded-absolute-path>
 ```
 
-Use the same canonical file path.
-
-Optional iPad1Files hand-off:
+iPad1Files hand-off:
 
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-## Scope ownership
+Same physical path only; no copy.
 
-Keep in iPad1FTPDownloader:
+Planned PDF preference modes:
+
+```text
+Her seferinde sor
+Otomatik PDFReader ile aç
+Sadece indir
+```
+
+Recommended default: `Her seferinde sor`.
+
+## Cross-app responsibilities
+
+### Keep in iPad1FTPDownloader
 
 - FTP connection;
 - remote browse;
@@ -126,63 +189,92 @@ Keep in iPad1FTPDownloader:
 - remote search/sort;
 - remote rename/delete;
 - MKD/RMD;
-- lightweight transfer-results list;
+- transfer-oriented local results list;
+- download-location preference;
 - sibling-app path hand-off.
 
-Delegate to iPad1Files:
+### Delegate to iPad1Files
 
+- folder picker;
+- file picker;
 - advanced local copy/move;
 - general folder management;
 - favorites;
-- filesystem-wide local search;
+- filesystem-wide search;
 - classification;
 - rich/general preview;
-- ZIP management;
-- text editing;
-- Open With registry.
+- ZIP/text-editor/Open With features.
 
-Delegate PDF rendering/reader functionality to iPad1PDFReader.
+### Delegate to iPad1PDFReader
+
+- PDF rendering;
+- reader UI;
+- PDF-specific navigation/zoom/bookmarks/highlights.
+
+## Sibling app contracts already communicated
+
+### iPad1Files
+
+Expected schemes:
+
+```text
+ipad1files://pickFolder?root=...&callback=...
+ipad1files://show?path=...
+```
+
+Future upload picker:
+
+```text
+ipad1files://pickFile?root=...&callback=...
+```
+
+Picker must remain constrained to its supplied root.
+
+### iPad1PDFReader
+
+Expected scheme:
+
+```text
+ipad1pdf://open?path=<percent-encoded-absolute-path>
+```
+
+PDFReader must open the same physical file and must work both when cold-launched and when already running.
 
 ## Revised roadmap
 
 ### v1.3 — integration/stabilization
 
-Immediate release target:
-
-1. change download root to `/var/mobile/Media/iPad1Files/Downloads/`;
-2. create the shared path automatically;
-3. ensure no duplicate copy;
-4. centralize remote-directory normalization;
-5. verify child/parent/manual/refresh path behavior;
-6. preserve download/upload/remote-command functionality;
-7. add PDFReader hand-off;
-8. optionally add iPad1Files show hand-off;
-9. keep local UI lightweight;
-10. build/install/test on physical iPad 1.
+- canonical Downloads root;
+- one-file rule;
+- centralized remote path invariant;
+- same-path PDF/iPad1Files hand-off;
+- download destination preference model;
+- keep local UI lightweight;
+- build/install/test on physical iPad 1.
 
 ### v1.4 — transfer manager
 
 - pause/resume/cancel;
-- FIFO queue;
+- queue;
 - retry;
 - progress/speed/ETA;
-- overwrite/resume/rename collision choice;
-- small metadata-only history;
-- connection-loss handling.
+- overwrite/resume/rename collision handling;
+- small metadata-only transfer history.
 
 ### v1.5 — FTP remote UX
 
-- improved Saved Servers editor;
+- saved-server editor;
 - remote search;
-- sorting/folder-first option;
+- sorting/folder-first;
 - remote metadata;
-- remote operation polish.
+- remote-operation polish.
 
 ### v1.6 — sibling-app integration polish
 
-- robust PDFReader/iPad1Files hand-off;
+- robust picker callback flow;
+- robust `Dosyalarda Göster`;
 - same-file verification;
-- optional upload path hand-in from iPad1Files if defined.
+- upload-from-iPad1Files hand-in if implemented.
 
 ### v1.7 — credential hardening
 
@@ -192,9 +284,7 @@ Immediate release target:
 
 ### SFTP / FTPS
 
-Experimental research only. Do not make them release dependencies.
-
-For SFTP, first build a standalone armv7/iOS 5 libssh2 proof-of-concept and measure RAM/CPU on the physical iPad. Integrate only if acceptable.
+Experimental research only. Do not make them release dependencies. Profile any library on physical iPad 1 before integration.
 
 ## Memory policy
 
@@ -203,7 +293,8 @@ Safe:
 - streaming transfers;
 - small buffers;
 - small queue/history metadata;
-- path hand-offs.
+- small path/preference strings;
+- URL scheme hand-offs.
 
 Use caution:
 
@@ -219,22 +310,24 @@ Do not add:
 - AI/ML;
 - large background caches;
 - SMB expansion;
-- heavy SFTP dependencies without profiling.
+- heavy SFTP dependency without profiling.
 
 ## Immediate next action
 
-Modify the actual v1.3 source to match `INTEGRATION.md` and the revised roadmap.
+Continue from the actual v1.3 source and implement/verify in this order:
 
-Start with the highest-impact source changes:
+1. confirm canonical download root is used everywhere;
+2. confirm the shared Downloads directory is auto-created;
+3. centralize and verify remote directory normalization;
+4. compile cleanly with legacy Theos/iOS 5 target;
+5. install on physical iPad 1;
+6. test child and parent navigation with no manual `/` correction;
+7. test download/upload/regression features;
+8. test PDF completion hand-off;
+9. implement the new download destination preference + iPad1Files folder-picker callback;
+10. update docs only with physically verified results.
 
-1. replace all download-root constants/usages with `/var/mobile/Media/iPad1Files/Downloads/`;
-2. ensure the directory is created;
-3. centralize remote directory normalization;
-4. remove/avoid rich local preview code that duplicates sibling-app responsibility;
-5. add same-path PDF hand-off;
-6. build and test.
-
-Local start:
+Local build start:
 
 ```bash
 cd ~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
@@ -245,7 +338,21 @@ make clean
 make package FINALPACKAGE=1
 ```
 
-## Deployment reminder
+Latest observed deployment address:
+
+```text
+192.168.1.4
+```
+
+Example copy:
+
+```bash
+scp -o HostKeyAlgorithms=+ssh-rsa \
+packages/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb \
+root@192.168.1.4:/var/mobile/
+```
+
+## Terminal reminder
 
 WSL prompt:
 
@@ -266,7 +373,7 @@ Run `dpkg`, iPad `uicache` and `killall SpringBoard` only after entering the iPa
 Repository:
 
 ```text
-SHapeloglu/iPad1FTPDownloader
+https://github.com/SHapeloglu/iPad1FTPDownloader
 ```
 
-`INTEGRATION.md` is authoritative. `ROADMAP.md`, `TASK.md`, `ARCHITECTURE.md`, `CLAUDE.md` and this session hand-off are aligned to the focused FTP-transfer architecture.
+`SESSION.md` is the primary hand-off document. `INTEGRATION.md` is authoritative for cross-app responsibility and URL-scheme contracts. Physical-device verification is authoritative for feature status.
