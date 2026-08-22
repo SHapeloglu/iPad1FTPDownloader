@@ -13,10 +13,10 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 - [x] Do not copy completed downloads into iPad1Files after transfer.
 - [x] Centralize remote directory normalization in one helper.
 - [x] Enforce leading `/` and trailing `/` on remote directory navigation paths.
-- [ ] Verify manual path entry preserves the invariant.
+- [x] Verify manual path entry preserves the invariant.
 - [x] Verify child-folder navigation preserves the invariant.
 - [x] Verify parent navigation preserves the invariant.
-- [ ] Verify refresh preserves the invariant independently.
+- [x] Verify refresh preserves the invariant independently.
 - [x] Verify root remains exactly `/` during parent navigation.
 - [x] Build and install v1.3 on the physical iPad 1.
 
