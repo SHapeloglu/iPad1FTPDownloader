@@ -6,7 +6,7 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 
 ## P0 — v1.3 integration-critical
 
-- [ ] Change canonical local download root to `/var/mobile/Media/iPad1Files/Downloads/`.
+- [ ] Confirm canonical local download root is `/var/mobile/Media/iPad1Files/Downloads/` everywhere.
 - [ ] Create the canonical Downloads directory automatically when missing.
 - [ ] Remove new-download use of `/var/mobile/Media/iPad1FTPDownloads/`.
 - [ ] Verify a completed FTP file exists in exactly one physical location.
@@ -22,7 +22,7 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 
 ## P1 — v1.3 regression and hand-off
 
-- [ ] Download directly into `/var/mobile/Media/iPad1Files/Downloads/`.
+- [ ] Download directly into `/var/mobile/Media/iPad1Files/Downloads/` or a validated descendant.
 - [ ] Upload remains stream-based and functional.
 - [ ] Transfer percentage works.
 - [ ] Transfer speed works.
@@ -35,11 +35,32 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 - [ ] Add `PDFReader ile Aç` action.
 - [ ] Percent-encode the canonical absolute path.
 - [ ] Open `ipad1pdf://open?path=<encoded-path>` without copying the file.
-- [ ] Add optional `Dosyalarda Göster` using `ipad1files://show?path=<encoded-path>`.
+- [ ] Add `Dosyalarda Göster` using `ipad1files://show?path=<encoded-path>`.
 - [ ] Handle unavailable sibling URL schemes gracefully.
 - [ ] Keep local Downloads view limited to listing/opening transfer results.
 
-## P2 — v1.4 transfer manager
+## P2 — download destination preference + iPad1Files picker
+
+- [ ] Add preference modes: `Son kullanılan klasör`, `Her indirmede sor`, `Her zaman Downloads'a indir`.
+- [ ] Default to a simple/low-friction mode; final default should be decided after on-device UX testing.
+- [ ] Persist only lightweight path/preference metadata.
+- [ ] Add `Başka klasör seç` hand-off to iPad1Files.
+- [ ] Call `ipad1files://pickFolder?root=<encoded-root>&callback=<encoded-callback>`.
+- [ ] Register/handle callback `ipad1ftp://folderSelected?path=<encoded-path>`.
+- [ ] Validate callback path remains under `/var/mobile/Media/iPad1Files/Downloads/`.
+- [ ] Reject path traversal/out-of-root destinations.
+- [ ] Remember last selected folder.
+- [ ] Optionally support server-specific last folder if it remains simple.
+- [ ] If iPad1Files scheme is unavailable, fall back to canonical Downloads without losing transfer state.
+
+## P3 — PDF post-download preference
+
+- [ ] Add preference modes: `Her seferinde sor`, `Otomatik PDFReader ile aç`, `Sadece indir`.
+- [ ] Recommended initial default: `Her seferinde sor`.
+- [ ] If auto-open is selected and `ipad1pdf://` is unavailable, leave file intact and show a useful status.
+- [ ] Verify no duplicate PDF copy is created.
+
+## P4 — v1.4 transfer manager
 
 - [ ] Pause download.
 - [ ] Resume with FTP REST/offset where supported.
@@ -55,7 +76,7 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 - [ ] Test at least 3 sequential queued transfers.
 - [ ] Verify no whole-file buffering.
 
-## P3 — v1.5 FTP remote UX
+## P5 — v1.5 FTP remote UX
 
 - [ ] Improve Saved Servers editor.
 - [ ] Edit saved profile.
@@ -69,15 +90,16 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 - [ ] Upload target selection.
 - [ ] Keep recursive remote search bounded/cancellable if implemented.
 
-## P4 — v1.6 app-family integration polish
+## P6 — v1.6 app-family integration polish
 
+- [ ] Verify folder picker round-trip with iPad1Files on physical iPad 1.
 - [ ] Verify PDF hand-off with iPad1PDFReader installed.
 - [ ] Verify `Dosyalarda Göster` when iPad1Files scheme is available.
-- [ ] Confirm both sibling-app actions use the same physical file.
-- [ ] Define upload-from-iPad1Files path hand-off if needed.
+- [ ] Confirm all sibling-app actions use the same physical file.
+- [ ] Define upload-from-iPad1Files file-picker hand-off if needed.
 - [ ] Do not introduce an Open With registry into FTPDownloader.
 
-## P5 — v1.7 credential hardening
+## P7 — v1.7 credential hardening
 
 - [ ] Move saved passwords to an iOS-5-compatible Keychain implementation.
 - [ ] Add “do not save password” option.
@@ -94,32 +116,18 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 
 ## Explicit non-goals
 
-Do not add:
-
-- advanced local copy/move;
-- general folder management;
-- favorites;
-- filesystem-wide local search;
-- classification;
-- rich preview framework;
-- full PDF reader functionality;
-- ZIP manager;
-- text editor;
-- Open With registry;
-- OCR;
-- AI/ML;
-- whole-file RAM buffering;
-- large background caches.
+Do not add advanced local copy/move, general folder management, favorites, filesystem-wide local search, classification, rich preview framework, full PDF reader functionality, ZIP manager, text editor, Open With registry, OCR, AI/ML, whole-file RAM buffering or large background caches.
 
 ## Definition of done for v1.3
 
 v1.3 is done only when:
 
 1. clean build/package/install succeeds on the physical iPad 1;
-2. canonical download root is `/var/mobile/Media/iPad1Files/Downloads/`;
+2. canonical shared download root is used;
 3. no duplicate physical copy is created;
 4. remote directory navigation never requires manual `/` correction;
 5. download/upload and remote command regressions pass;
 6. PDF hand-off opens the same physical file;
 7. local UI remains lightweight and transfer-oriented;
-8. `TESTING.md`, `CHANGELOG.md`, `SESSION.md` and `INTEGRATION.md` reflect actual tested behavior.
+8. the new folder-picker/preference work is either implemented and verified or explicitly deferred to the next tagged build;
+9. `TESTING.md`, `CHANGELOG.md`, `SESSION.md` and `INTEGRATION.md` reflect actual tested behavior.
