@@ -4,7 +4,7 @@
 
 iPad1FTPDownloader is the **network-transfer specialist** in the iPad 1 application family. It must not evolve into a general filesystem manager or a PDF reader.
 
-The intended flow is:
+Canonical flow:
 
 ```text
 FTP Server
@@ -30,76 +30,121 @@ iPad1PDFReader
 - CFNetwork / CFFTP
 - stream-based transfers
 
-## Shared download root
-
-Canonical FTP download directory:
+## Canonical shared download root
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-iPad1FTPDownloader must create the directory if it does not exist.
-
-The old directory:
-
-```text
-/var/mobile/Media/iPad1FTPDownloads/
-```
-
-is deprecated and must not be used for new downloads.
+Create the directory if missing. New downloads must not use `/var/mobile/Media/iPad1FTPDownloads/`.
 
 ## Single physical file rule
 
-A transferred file must have one canonical physical location.
+One transfer produces one physical file. Do not copy a completed download into another app-owned directory for integration.
 
-Correct:
+## Download destination behavior
+
+iPad1FTPDownloader owns the download-location **preference**, while iPad1Files owns the real folder-picker UI.
+
+Supported preference modes:
 
 ```text
-/var/mobile/Media/iPad1Files/Downloads/example.pdf
+Son kullanılan klasör
+Her indirmede sor
+Her zaman Downloads'a indir
 ```
 
-Incorrect:
+The selected folder must remain inside:
 
 ```text
-/var/mobile/Media/iPad1FTPDownloads/example.pdf
-/var/mobile/Media/iPad1Files/Downloads/example.pdf
+/var/mobile/Media/iPad1Files/Downloads/
 ```
 
-Do not copy a completed FTP download into iPad1Files. Download it directly into the shared directory.
+and its descendants.
 
-## PDF hand-off
+### Folder picker hand-off
 
-When a completed download has a `.pdf` extension, the UI may offer:
+When the user chooses `Başka klasör seç`, call iPad1Files:
 
 ```text
-Download complete
+ipad1files://pickFolder?root=<percent-encoded-root>&callback=<percent-encoded-callback>
+```
+
+Recommended root:
+
+```text
+/var/mobile/Media/iPad1Files/Downloads/
+```
+
+Recommended callback:
+
+```text
+ipad1ftp://folderSelected?path=<percent-encoded-absolute-path>
+```
+
+The FTP app validates the returned path is still under the canonical Downloads root before starting the transfer.
+
+The last selected folder may be persisted as a small path string. Server-specific last-folder metadata is allowed if useful and kept lightweight.
+
+### Future upload picker
+
+A future upload may use:
+
+```text
+ipad1files://pickFile?root=<percent-encoded-root>&callback=<percent-encoded-callback>
+```
+
+with callback:
+
+```text
+ipad1ftp://fileSelected?path=<percent-encoded-absolute-path>
+```
+
+Do not build a second general filesystem browser inside FTPDownloader.
+
+## PDF completion behavior
+
+When a completed file extension is `.pdf` (case-insensitive), offer:
+
+```text
+İndirme tamamlandı
 
 PDFReader ile Aç
 Dosyalarda Göster
 Tamam
 ```
 
-PDFReader URL scheme:
+PDFReader hand-off:
 
 ```text
 ipad1pdf://open?path=<percent-encoded-absolute-path>
 ```
 
-The file must be opened from the existing physical path. Do not duplicate it.
-
-## iPad1Files hand-off
-
-Optional URL scheme:
+iPad1Files hand-off:
 
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-This is a hand-off only. iPad1FTPDownloader must not implement iPad1Files functionality merely because the URL scheme is not yet available.
+Both actions use the same physical file; never copy it.
+
+### PDF post-download preference
+
+Support these lightweight modes:
+
+```text
+Her seferinde sor
+Otomatik PDFReader ile aç
+Sadece indir
+```
+
+Recommended initial/default behavior is `Her seferinde sor` until physical-device UX testing says otherwise.
+
+If a sibling URL scheme is unavailable, fail gracefully and leave the downloaded file untouched.
 
 ## Local browser scope
 
-A lightweight local Downloads view is allowed for transfer-oriented tasks:
+A lightweight local Downloads view is allowed only for transfer-oriented tasks:
 
 - list completed downloads;
 - show transfer result;
@@ -113,35 +158,28 @@ General filesystem features belong to iPad1Files:
 - filesystem-wide search;
 - file classification;
 - rich/general preview system;
+- ZIP/text-editor features;
 - Open With registry.
 
 ## FTP-owned functionality
 
-These features stay in iPad1FTPDownloader:
+These remain in iPad1FTPDownloader:
 
 - FTP connection;
 - remote folder browsing;
-- download;
-- upload;
-- pause/resume;
-- transfer progress;
-- transfer speed;
-- FIFO transfer queue;
-- remote rename;
-- delete;
+- download/upload;
+- pause/resume/cancel/retry;
+- transfer progress/speed/ETA;
+- FIFO queue;
+- remote rename/delete;
 - MKD/RMD;
 - saved servers;
 - remote search;
 - sorting.
 
-Do not move these responsibilities into iPad1Files or iPad1PDFReader.
-
 ## Remote path invariant
 
-Every remote FTP directory path must:
-
-1. start with `/`;
-2. end with `/`.
+Every remote FTP **directory** path must start with `/` and end with `/`. Root is exactly `/`.
 
 Correct:
 
@@ -149,53 +187,36 @@ Correct:
 /domains/example.com/public_html/css/
 ```
 
-Incorrect:
-
-```text
-domains/example.com/public_html/css
-/domains/example.com/public_html/css
-```
-
-This invariant must hold for:
-
-- manually entered paths;
-- current path state;
-- child-directory navigation;
-- parent-directory navigation;
-- refresh;
-- URL construction.
-
-Normalize before storing directory state, not only immediately before a network request.
+This invariant applies to manual entry, current state, child navigation, parent navigation, refresh and FTP URL construction. Normalize before storing directory state, not only before a network request.
 
 ## Memory policy
 
-### Safe
+Safe:
 
 - streamed download/upload;
 - small transfer buffers;
 - FIFO queue metadata;
+- saved path/preference strings;
 - URL/path hand-offs.
 
-### Use caution
+Use caution:
 
-- large previews;
 - very long queues;
-- recursive remote search.
+- recursive remote search;
+- heavy secure-protocol libraries.
 
-### Do not add
+Do not add:
 
-- loading complete transferred files into RAM;
-- heavy SMB/SFTP libraries without profiling on the physical iPad 1;
+- whole-file RAM buffering;
 - OCR;
 - AI/ML;
-- large background caches.
+- large background caches;
+- heavy SMB/SFTP dependencies without profiling on physical iPad 1.
 
-## Architectural decision rule
+## Ownership rule
 
-If a feature is primarily about **network transfer**, it belongs here.
+- Network transfer problem → **iPad1FTPDownloader**
+- Local filesystem/folder-picker problem → **iPad1Files**
+- PDF reading/rendering problem → **iPad1PDFReader**
 
-If it is primarily about **general local file management**, it belongs in iPad1Files.
-
-If it is primarily about **reading/rendering PDFs**, it belongs in iPad1PDFReader.
-
-Integration should use a shared physical path and lightweight URL-scheme hand-offs rather than file duplication or duplicated feature sets.
+Integration must use shared physical paths and lightweight URL-scheme hand-offs rather than duplicate files or duplicate subsystems.
