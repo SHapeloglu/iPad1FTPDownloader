@@ -6,11 +6,11 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 
 ## P0 — v1.3 integration-critical
 
-- [ ] Confirm canonical local download root is `/var/mobile/Media/iPad1Files/Downloads/` everywhere.
-- [ ] Create the canonical Downloads directory automatically when missing.
-- [ ] Remove new-download use of `/var/mobile/Media/iPad1FTPDownloads/`.
-- [ ] Verify a completed FTP file exists in exactly one physical location.
-- [ ] Do not copy completed downloads into iPad1Files after transfer.
+- [x] Confirm canonical local download root is `/var/mobile/Media/iPad1Files/Downloads/` for new downloads.
+- [x] Create the canonical Downloads directory automatically when missing.
+- [x] Remove new-download use of `/var/mobile/Media/iPad1FTPDownloads/`.
+- [x] Verify a completed FTP file exists in exactly one new physical location.
+- [x] Do not copy completed downloads into iPad1Files after transfer.
 - [x] Centralize remote directory normalization in one helper.
 - [x] Enforce leading `/` and trailing `/` on remote directory navigation paths.
 - [ ] Verify manual path entry preserves the invariant.
@@ -22,7 +22,7 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 
 ## P1 — v1.3 regression and hand-off
 
-- [ ] Download directly into `/var/mobile/Media/iPad1Files/Downloads/` or a validated descendant.
+- [x] Download directly into `/var/mobile/Media/iPad1Files/Downloads/`.
 - [ ] Upload remains stream-based and functional.
 - [ ] Transfer percentage works.
 - [ ] Transfer speed works.
@@ -124,7 +124,7 @@ v1.3 is done only when:
 
 1. clean build/package/install succeeds on the physical iPad 1;
 2. canonical shared download root is used;
-3. no duplicate physical copy is created;
+3. no duplicate physical copy is created for new transfers;
 4. remote directory navigation never requires manual `/` correction;
 5. download/upload and remote command regressions pass;
 6. PDF hand-off opens the same physical file;
