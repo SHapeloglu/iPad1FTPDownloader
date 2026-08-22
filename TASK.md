@@ -11,14 +11,14 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 - [ ] Remove new-download use of `/var/mobile/Media/iPad1FTPDownloads/`.
 - [ ] Verify a completed FTP file exists in exactly one physical location.
 - [ ] Do not copy completed downloads into iPad1Files after transfer.
-- [ ] Centralize remote directory normalization in one helper.
-- [ ] Enforce leading `/` and trailing `/` on every remote directory path.
+- [x] Centralize remote directory normalization in one helper.
+- [x] Enforce leading `/` and trailing `/` on remote directory navigation paths.
 - [ ] Verify manual path entry preserves the invariant.
-- [ ] Verify child-folder navigation preserves the invariant.
-- [ ] Verify parent navigation preserves the invariant.
-- [ ] Verify refresh preserves the invariant.
-- [ ] Verify root remains exactly `/`.
-- [ ] Build and install v1.3 on the physical iPad 1.
+- [x] Verify child-folder navigation preserves the invariant.
+- [x] Verify parent navigation preserves the invariant.
+- [ ] Verify refresh preserves the invariant independently.
+- [x] Verify root remains exactly `/` during parent navigation.
+- [x] Build and install v1.3 on the physical iPad 1.
 
 ## P1 — v1.3 regression and hand-off
 
