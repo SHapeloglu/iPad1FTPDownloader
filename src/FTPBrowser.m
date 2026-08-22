@@ -1,4 +1,5 @@
 #import "FTPBrowser.h"
+#import "FTPPathUtils.h"
 #import <CFNetwork/CFNetwork.h>
 
 @implementation FTPBrowser
@@ -21,10 +22,7 @@
     [self cancel];
     _finished = NO;
 
-    NSString *safePath = path;
-    if ([safePath length] == 0) safePath = @"/";
-    if (![safePath hasPrefix:@"/"]) safePath = [@"/" stringByAppendingString:safePath];
-    if (![safePath hasSuffix:@"/"]) safePath = [safePath stringByAppendingString:@"/"];
+    NSString *safePath = [FTPPathUtils normalizedRemoteDirectoryPath:path];
 
     NSString *urlString = [NSString stringWithFormat:@"ftp://%@:%ld%@", host, (long)port, safePath];
     NSString *escaped = [urlString stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
