@@ -6,6 +6,30 @@ iPad1FTPDownloader is the **network-transfer specialist** for the iPad 1 applica
 
 It must remain focused on remote FTP operations and efficient streamed transfer. General local filesystem management belongs to iPad1Files. PDF rendering belongs to iPad1PDFReader.
 
+## Mandatory sibling-app ownership gate
+
+Before proposing, designing or implementing **any** new feature, first determine which application in the iPad 1 family owns that responsibility.
+
+Do not implement a feature inside iPad1FTPDownloader merely because a competing FTP/file-manager application includes it.
+
+Mandatory decision flow:
+
+```text
+New feature request
+      ↓
+Which specialist app owns this responsibility?
+      ↓
+Network transfer / remote FTP operation → iPad1FTPDownloader
+Local filesystem / picker / file-management → iPad1Files
+Terminal / shell / command execution → iPad1Terminal
+Remote desktop / VNC → iPad1VNC
+PDF rendering / reading → iPad1PDFReader
+      ↓
+If another app owns it: integrate/hand off; do not duplicate it here.
+```
+
+This ownership check is required for every roadmap item, competitor-derived suggestion and implementation task. Cross-app integration should use shared physical paths and lightweight URL-scheme hand-offs where practical.
+
 ## Platform constraints
 
 - iPad 1
@@ -302,6 +326,10 @@ Legacy SSH may require per-command `HostKeyAlgorithms=+ssh-rsa`.
 
 - Primarily network transfer → **iPad1FTPDownloader**
 - Primarily general local file management → **iPad1Files**
+- Primarily terminal/shell/command execution → **iPad1Terminal**
+- Primarily remote desktop/VNC → **iPad1VNC**
 - Primarily PDF reading/rendering → **iPad1PDFReader**
+
+This decision must be made **before** implementation. If another specialist app owns the capability, iPad1FTPDownloader should integrate with that app rather than duplicate its subsystem.
 
 Integration must use canonical shared paths and lightweight hand-offs, not duplicated subsystems or duplicated files.
