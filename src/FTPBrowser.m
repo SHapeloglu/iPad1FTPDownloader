@@ -84,21 +84,10 @@
     }
 }
 
-- (NSComparisonResult)compareRemoteItem:(NSDictionary *)left toItem:(NSDictionary *)right {
-    BOOL leftDirectory = [[left objectForKey:@"isDirectory"] boolValue];
-    BOOL rightDirectory = [[right objectForKey:@"isDirectory"] boolValue];
-    if (leftDirectory != rightDirectory)
-        return leftDirectory ? NSOrderedAscending : NSOrderedDescending;
-
-    NSString *leftName = [left objectForKey:@"name"] ?: @"";
-    NSString *rightName = [right objectForKey:@"name"] ?: @"";
-    return [leftName compare:rightName options:(NSCaseInsensitiveSearch | NSNumericSearch)];
-}
-
 - (NSArray *)sortedRemoteItems:(NSArray *)items {
-    return [items sortedArrayUsingComparator:^NSComparisonResult(id left, id right) {
-        return [self compareRemoteItem:(NSDictionary *)left toItem:(NSDictionary *)right];
-    }];
+    NSSortDescriptor *foldersFirst = [[[NSSortDescriptor alloc] initWithKey:@"isDirectory" ascending:NO] autorelease];
+    NSSortDescriptor *nameAscending = [[[NSSortDescriptor alloc] initWithKey:@"name" ascending:YES selector:@selector(caseInsensitiveCompare:)] autorelease];
+    return [items sortedArrayUsingDescriptors:[NSArray arrayWithObjects:foldersFirst, nameAscending, nil]];
 }
 
 - (NSArray *)parseListing:(NSData *)listingData {
