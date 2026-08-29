@@ -94,8 +94,8 @@ Competitor review shows search/sort/connection management are valid FTP-client r
 - [ ] Edit saved profile.
 - [ ] Delete saved profile.
 - [ ] **Source implemented, physical test pending:** remote filename/folder filtering over the already-loaded directory listing; no recursive traversal.
-- [ ] **Source implemented, physical test pending:** user-selectable A→Z sorting.
-- [ ] **Source implemented, physical test pending:** user-selectable Z→A sorting.
+- [x] **Physically verified on iPad 1 (2026-08-29):** user-selectable A→Z sorting.
+- [x] **Physically verified on iPad 1 (2026-08-29):** user-selectable Z→A sorting.
 - [ ] **Source implemented, physical test pending:** folders-first toggle.
 - [x] Human-readable remote file size already present in row UI; preserve it.
 - [ ] Remote date/time metadata where server listing format permits reliable parsing.
