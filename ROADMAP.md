@@ -2,7 +2,7 @@
 
 ## Product direction
 
-iPad1FTPDownloader is the focused **network-transfer specialist** for iPad 1 / iOS 5.1.1. General local file management belongs to iPad1Files; PDF reading belongs to iPad1PDFReader.
+iPad1FTPDownloader is the focused **network-transfer specialist** for iPad 1 / iOS 5.1.1. General local file management belongs to iPad1Files; PDF reading belongs to iPad1PDFReader; shell/terminal belongs to iPad1Terminal; VNC/remote desktop belongs to iPad1VNC.
 
 Canonical flow:
 
@@ -18,6 +18,8 @@ iPad1Files
 iPad1PDFReader
 ```
 
+Every competitor-derived feature must pass the ownership gate before entering this roadmap. A feature being present in FTPManager Pro, Documents or FE File Explorer is not by itself a reason to duplicate it here.
+
 ## v1.3 — integration and stabilization
 
 - Canonical download root: `/var/mobile/Media/iPad1Files/Downloads/`.
@@ -28,7 +30,7 @@ iPad1PDFReader
 - Preserve download/upload/rename/delete/MKD/RMD behavior.
 - Same-path PDF hand-off through `ipad1pdf://open?path=...`.
 - `Dosyalarda Göster` through `ipad1files://show?path=...`.
-- Lightweight local transfer-results view only.
+- No embedded local preview/file-manager controllers.
 - Add download destination preference model:
   - `Son kullanılan klasör`
   - `Her indirmede sor`
@@ -44,6 +46,8 @@ Release only after physical-device verification.
 
 ## v1.4 — transfer manager
 
+High-value competitor parity that belongs to the FTP/network-transfer specialist:
+
 - Pause/resume/cancel.
 - FTP REST/offset resume where supported.
 - FIFO queue and bounded metadata.
@@ -57,13 +61,18 @@ All transfer implementations stay stream-based.
 
 ## v1.5 — FTP remote UX
 
+Low-RAM competitor parity that remains inside FTP scope:
+
 - Improved Saved Servers editor.
-- Remote filename/folder search.
-- A→Z / Z→A sorting.
-- Optional folder-first sorting.
-- Human-readable remote metadata.
+- Remote filename/folder search over the current loaded listing first.
+- User-selectable A→Z / Z→A sorting.
+- Folders-first ordering.
+  - Development source now defaults to folders-first + case-insensitive A→Z.
+  - Physical iPad verification is still required.
+- Human-readable remote file size.
+- Remote date/time metadata only where server listing format permits reliable parsing.
 - Rename/delete/MKD/RMD polish.
-- Upload target selection.
+- Remote upload target selection.
 - Recursive search only if bounded/cancellable.
 
 ## v1.6 — sibling-app integration polish
@@ -72,7 +81,10 @@ All transfer implementations stay stream-based.
 - Robust `Dosyalarda Göster`.
 - Robust PDFReader hand-off.
 - Same-file verification.
-- Optional upload file-picker hand-in from iPad1Files.
+- Replace the temporary local upload chooser with iPad1Files `pickFile` once that receiving contract is physically verified.
+- Never duplicate iPad1Files browsing UI merely to select an upload source.
+
+See `SIBLING_APP_INSTRUCTIONS.md`.
 
 ## v1.7 — credential hardening
 
@@ -83,14 +95,29 @@ All transfer implementations stay stream-based.
 
 ## Experimental — SFTP / FTPS
 
-SFTP and FTPS are research tracks, not release dependencies. Build a standalone armv7/iOS 5 proof-of-concept and profile RAM/CPU on physical iPad 1 before integrating any heavy library.
+SFTP and FTPS are still network-transfer features, but they are research tracks rather than release dependencies. Build a standalone armv7/iOS 5 proof-of-concept and profile RAM/CPU on physical iPad 1 before integrating any heavy library.
 
-## Explicit non-goals
+## Explicit sibling-owned capabilities
 
-Do not add general local copy/move, broad folder management, favorites, filesystem-wide local search, classification, rich preview framework, full PDF reader, ZIP manager, text editor, Open With registry, SMB expansion, OCR, AI/ML, large background caches or whole-file RAM buffering.
+Do not implement these in FTPDownloader even when competitors bundle them into one app:
+
+- local copy/move/folder management -> iPad1Files;
+- local file/folder picker -> iPad1Files;
+- ZIP/archive management -> iPad1Files;
+- general image/document preview -> iPad1Files or relevant reader;
+- PDF rendering/annotation -> iPad1PDFReader;
+- text editing/general text-reader ownership -> sibling file/reader app;
+- terminal/shell/SSH console -> iPad1Terminal;
+- VNC/remote desktop -> iPad1VNC;
+- broad media player -> sibling media-capable app if ever needed;
+- general cloud/SMB file manager -> separate specialist, not FTPDownloader.
 
 ## Product rule
 
-- Network transfer → iPad1FTPDownloader
-- Local filesystem/picker → iPad1Files
-- PDF reading/rendering → iPad1PDFReader
+- Network transfer -> iPad1FTPDownloader
+- Local filesystem/picker -> iPad1Files
+- PDF reading/rendering -> iPad1PDFReader
+- Terminal/shell -> iPad1Terminal
+- VNC/remote desktop -> iPad1VNC
+
+Prefer shared physical paths and lightweight URL-scheme hand-offs over duplicated subsystems.
