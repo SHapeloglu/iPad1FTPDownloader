@@ -2,7 +2,17 @@
 
 ## Current priority
 
-Finish **v1.3 integration/stabilization** first. Do not add new local file-manager scope before the shared-path and remote-path invariants are proven on the physical iPad 1.
+Finish **v1.3 integration/stabilization** first. Every new feature must pass the sibling-app ownership gate before implementation.
+
+Ownership:
+
+- FTP/network transfer -> iPad1FTPDownloader
+- local filesystem/pickers -> iPad1Files
+- PDF -> iPad1PDFReader
+- terminal/shell -> iPad1Terminal
+- VNC/remote desktop -> iPad1VNC
+
+See `SIBLING_APP_INSTRUCTIONS.md` for delegated work.
 
 ## P0 — v1.3 integration-critical
 
@@ -37,7 +47,7 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 - [ ] Open `ipad1pdf://open?path=<encoded-path>` without copying the file.
 - [ ] Add `Dosyalarda Göster` using `ipad1files://show?path=<encoded-path>`.
 - [ ] Handle unavailable sibling URL schemes gracefully.
-- [ ] Keep local Downloads view limited to listing/opening transfer results.
+- [ ] Keep local UI limited to transfer status and hand-off; do not reintroduce local preview/file-manager controllers.
 
 ## P2 — download destination preference + iPad1Files picker
 
@@ -76,30 +86,34 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 - [ ] Test at least 3 sequential queued transfers.
 - [ ] Verify no whole-file buffering.
 
-## P5 — v1.5 FTP remote UX
+## P5 — FTP remote UX
+
+Competitor review shows search/sort/connection management are valid FTP-client responsibilities, while local editing/preview/media belong to sibling apps.
 
 - [ ] Improve Saved Servers editor.
 - [ ] Edit saved profile.
 - [ ] Delete saved profile.
-- [ ] Remote filename/folder search.
-- [ ] A→Z sorting.
-- [ ] Z→A sorting.
-- [ ] Optional folder-first sorting.
-- [ ] Human-readable remote file size.
-- [ ] Remote date/time metadata where server listing permits it.
-- [ ] Upload target selection.
-- [ ] Keep recursive remote search bounded/cancellable if implemented.
+- [ ] Remote filename/folder search using only the already-loaded directory listing first; avoid unbounded recursive search.
+- [ ] User-selectable A→Z sorting.
+- [ ] User-selectable Z→A sorting.
+- [ ] **Source implemented, physical test pending:** folders-first + case-insensitive A→Z default remote listing order.
+- [x] Human-readable remote file size already present in row UI; preserve it.
+- [ ] Remote date/time metadata where server listing format permits reliable parsing.
+- [ ] Upload target selection remains remote-path responsibility.
+- [ ] Keep recursive remote search bounded/cancellable if ever implemented.
 
-## P6 — v1.6 app-family integration polish
+## P6 — app-family integration polish
 
 - [ ] Verify folder picker round-trip with iPad1Files on physical iPad 1.
 - [ ] Verify PDF hand-off with iPad1PDFReader installed.
 - [ ] Verify `Dosyalarda Göster` when iPad1Files scheme is available.
 - [ ] Confirm all sibling-app actions use the same physical file.
-- [ ] Define upload-from-iPad1Files file-picker hand-off if needed.
+- [ ] Replace temporary FTPDownloader local upload chooser with physically verified iPad1Files `pickFile` hand-off.
+- [ ] Register/handle `ipad1ftp://fileSelected?path=...` only when the iPad1Files contract is implemented and verified.
 - [ ] Do not introduce an Open With registry into FTPDownloader.
+- [ ] Do not add terminal, shell, VNC, PDF rendering, ZIP, text editor or general local file-manager functionality.
 
-## P7 — v1.7 credential hardening
+## P7 — credential hardening
 
 - [ ] Move saved passwords to an iOS-5-compatible Keychain implementation.
 - [ ] Add “do not save password” option.
@@ -116,7 +130,7 @@ Finish **v1.3 integration/stabilization** first. Do not add new local file-manag
 
 ## Explicit non-goals
 
-Do not add advanced local copy/move, general folder management, favorites, filesystem-wide local search, classification, rich preview framework, full PDF reader functionality, ZIP manager, text editor, Open With registry, OCR, AI/ML, whole-file RAM buffering or large background caches.
+Do not add advanced local copy/move, general folder management, favorites, filesystem-wide local search, classification, rich preview framework, full PDF reader functionality, ZIP manager, text editor, Open With registry, terminal/shell, VNC/remote desktop, OCR, AI/ML, whole-file RAM buffering or large background caches.
 
 ## Definition of done for v1.3
 
@@ -129,5 +143,6 @@ v1.3 is done only when:
 5. download/upload and remote command regressions pass;
 6. PDF hand-off opens the same physical file;
 7. local UI remains lightweight and transfer-oriented;
-8. the new folder-picker/preference work is either implemented and verified or explicitly deferred to the next tagged build;
-9. `TESTING.md`, `CHANGELOG.md`, `SESSION.md` and `INTEGRATION.md` reflect actual tested behavior.
+8. sibling-owned functionality is delegated instead of duplicated;
+9. folder-picker/preference work is either implemented and verified or explicitly deferred to the next tagged build;
+10. `TESTING.md`, `CHANGELOG.md`, `SESSION.md`, `INTEGRATION.md` and `SIBLING_APP_INSTRUCTIONS.md` reflect actual tested behavior.
