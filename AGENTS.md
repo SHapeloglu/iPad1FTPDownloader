@@ -26,6 +26,21 @@ This file gives coding agents a compact operational contract for this repository
 8. Never commit credentials.
 9. Treat physical iPad behavior as the source of truth.
 10. Update docs when behavior or architecture changes.
+11. Before proposing or implementing any feature, perform the sibling-app ownership check below.
+
+## Mandatory sibling-app ownership check
+
+Every new feature, competitor-derived suggestion and implementation task must first be classified by specialist ownership:
+
+- network transfer / remote FTP operation → **iPad1FTPDownloader**
+- local filesystem / picker / file-management → **iPad1Files**
+- terminal / shell / command execution → **iPad1Terminal**
+- remote desktop / VNC → **iPad1VNC**
+- PDF rendering / reading → **iPad1PDFReader**
+
+If another application owns the responsibility, do **not** duplicate that subsystem inside iPad1FTPDownloader. Prefer shared physical paths and lightweight URL-scheme hand-off/integration.
+
+Never add a feature here solely because a competitor bundles it into one large application.
 
 ## Directory-path invariant
 
