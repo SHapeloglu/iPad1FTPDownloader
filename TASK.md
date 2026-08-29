@@ -93,10 +93,10 @@ Competitor review shows search/sort/connection management are valid FTP-client r
 - [ ] Improve Saved Servers editor.
 - [ ] Edit saved profile.
 - [ ] Delete saved profile.
-- [ ] Remote filename/folder search using only the already-loaded directory listing first; avoid unbounded recursive search.
-- [ ] User-selectable A→Z sorting.
-- [ ] User-selectable Z→A sorting.
-- [ ] **Source implemented, physical test pending:** folders-first + case-insensitive A→Z default remote listing order.
+- [ ] **Source implemented, physical test pending:** remote filename/folder filtering over the already-loaded directory listing; no recursive traversal.
+- [ ] **Source implemented, physical test pending:** user-selectable A→Z sorting.
+- [ ] **Source implemented, physical test pending:** user-selectable Z→A sorting.
+- [ ] **Source implemented, physical test pending:** folders-first toggle.
 - [x] Human-readable remote file size already present in row UI; preserve it.
 - [ ] Remote date/time metadata where server listing format permits reliable parsing.
 - [ ] Upload target selection remains remote-path responsibility.
