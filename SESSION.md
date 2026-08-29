@@ -2,7 +2,7 @@
 
 ## Latest hand-off
 
-Date: 2026-08-22
+Date: 2026-08-29
 
 ## Working context
 
@@ -50,23 +50,30 @@ Added upload, saved-server work, transfer progress/speed and remote file-operati
 
 ### v1.3 current verification
 
-On 2026-08-22 the current v1.3 source was pulled from `main`, clean-built with the legacy Theos/iOS 5 target and packaged successfully as:
+On 2026-08-29 the latest `main` source through commit `a3e9d6a` was pulled, clean-built with the legacy Theos/iOS 5 target and packaged successfully as:
 
 ```text
 packages/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb
 ```
 
-The package was installed on the physical iPad 1 at `192.168.1.2`.
+The package was installed on the physical iPad 1.
 
-Physical-device navigation test passed for:
+Previously physically verified v1.3 behavior includes:
 
 - entering child directories without manually adding `/`;
 - entering nested child directories;
 - returning with `← Üst Klasör`;
 - repeated parent navigation back to `/`;
-- no manual trailing-slash correction during that child/parent flow.
+- no manual trailing-slash correction during that child/parent flow;
+- canonical download root and one-file behavior as tracked in `TASK.md`;
+- manual path normalization and independent refresh normalization as tracked in `TASK.md`.
 
-The centralized `FTPPathUtils` path-normalization change is therefore physically verified for child/parent navigation. Manual path-entry and independent refresh regression cases are still to be tested separately.
+On 2026-08-29, the newly added remote sorting UI was physically tested on the iPad 1 and confirmed working for:
+
+- user-selectable A→Z sorting;
+- user-selectable Z→A sorting.
+
+Remote search and the folders-first toggle are source-implemented but still require explicit physical-device verification before being considered working.
 
 ## Remote path invariant
 
@@ -120,13 +127,15 @@ One transferred file = one physical file. Never copy it merely to integrate with
 
 ## Current v1.3 source state
 
-The current v1.3 source now clean-builds and installs on the physical iPad 1. Child/parent remote-directory navigation has passed physical-device testing after central path normalization.
+The current v1.3 source clean-builds and installs on the physical iPad 1. Child/parent navigation, manual path normalization, refresh normalization, canonical-download behavior and A→Z/Z→A remote sorting have physical-device verification recorded in `TASK.md` / this hand-off.
 
-Still unverified in this exact build:
+Still unverified in the current build unless separately recorded after this hand-off:
 
-- canonical Downloads root by performing a new real download;
-- one-file/no-duplicate rule on device;
-- upload and remote-command regressions;
+- remote filename/folder search over the already-loaded listing;
+- folders-first toggle;
+- upload/progress/speed regressions for this exact build;
+- saved-server regression;
+- remote rename/delete/MKD/RMD regressions for this exact build;
 - PDF completion hand-off;
 - new download destination preference + iPad1Files folder-picker callback.
 
@@ -341,12 +350,12 @@ Do not add:
 
 ## Immediate next action
 
-Continue from the physically installed v1.3 build and verify in this order:
+Continue from the physically installed current v1.3 build and verify in this order:
 
-1. perform a real download and confirm the file is created under `/var/mobile/Media/iPad1Files/Downloads/`;
-2. confirm no duplicate copy is created under `/var/mobile/Media/iPad1FTPDownloads/`;
-3. test manual remote path entry and independent refresh normalization;
-4. test upload/progress/speed and remote command regressions;
+1. test remote filename/folder search over the current loaded directory listing;
+2. test the folders-first toggle in both states and after changing remote directory;
+3. test upload/progress/speed and saved-server regressions;
+4. test rename/delete/MKD/RMD regressions;
 5. test PDF completion hand-off;
 6. implement the new download destination preference + iPad1Files folder-picker callback;
 7. update docs only with physically verified results.
