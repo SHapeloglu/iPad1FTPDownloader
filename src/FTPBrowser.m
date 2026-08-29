@@ -84,6 +84,23 @@
     }
 }
 
+- (NSComparisonResult)compareRemoteItem:(NSDictionary *)left toItem:(NSDictionary *)right {
+    BOOL leftDirectory = [[left objectForKey:@"isDirectory"] boolValue];
+    BOOL rightDirectory = [[right objectForKey:@"isDirectory"] boolValue];
+    if (leftDirectory != rightDirectory)
+        return leftDirectory ? NSOrderedAscending : NSOrderedDescending;
+
+    NSString *leftName = [left objectForKey:@"name"] ?: @"";
+    NSString *rightName = [right objectForKey:@"name"] ?: @"";
+    return [leftName compare:rightName options:(NSCaseInsensitiveSearch | NSNumericSearch)];
+}
+
+- (NSArray *)sortedRemoteItems:(NSArray *)items {
+    return [items sortedArrayUsingComparator:^NSComparisonResult(id left, id right) {
+        return [self compareRemoteItem:(NSDictionary *)left toItem:(NSDictionary *)right];
+    }];
+}
+
 - (NSArray *)parseListing:(NSData *)listingData {
     NSMutableArray *items = [NSMutableArray array];
     NSString *text = [[[NSString alloc] initWithData:listingData encoding:NSUTF8StringEncoding] autorelease];
@@ -126,7 +143,7 @@
                               size, @"size", nil];
         [items addObject:item];
     }
-    return items;
+    return [self sortedRemoteItems:items];
 }
 
 - (void)finish {
