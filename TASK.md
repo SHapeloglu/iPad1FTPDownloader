@@ -6,8 +6,10 @@ Finish **v1.3 integration/stabilization** first. Every new feature must pass the
 
 Ownership:
 
-- FTP/network transfer -> iPad1FTPDownloader
+- FTP transfer / remote FTP operations -> iPad1FTPDownloader
+- HTTP/HTTPS downloads -> iPad1Downloader
 - local filesystem/pickers -> iPad1Files
+- video playback/codecs/subtitles -> iPad1Player
 - PDF -> iPad1PDFReader
 - terminal/shell -> iPad1Terminal
 - VNC/remote desktop -> iPad1VNC
@@ -16,11 +18,11 @@ See `SIBLING_APP_INSTRUCTIONS.md` for delegated work.
 
 ## P0 — v1.3 integration-critical
 
-- [x] Confirm canonical local download root is `/var/mobile/Media/iPad1Files/Downloads/` for new downloads.
+- [x] Confirm canonical local download root is `/var/mobile/Media/iPad1Files/Downloads/` for new FTP downloads.
 - [x] Create the canonical Downloads directory automatically when missing.
 - [x] Remove new-download use of `/var/mobile/Media/iPad1FTPDownloads/`.
 - [x] Verify a completed FTP file exists in exactly one new physical location.
-- [x] Do not copy completed downloads into iPad1Files after transfer.
+- [x] Do not copy completed downloads after transfer merely for sibling integration.
 - [x] Centralize remote directory normalization in one helper.
 - [x] Enforce leading `/` and trailing `/` on remote directory navigation paths.
 - [x] Verify manual path entry preserves the invariant.
@@ -45,9 +47,13 @@ See `SIBLING_APP_INSTRUCTIONS.md` for delegated work.
 - [ ] Add `PDFReader ile Aç` action.
 - [ ] Percent-encode the canonical absolute path.
 - [ ] Open `ipad1pdf://open?path=<encoded-path>` without copying the file.
+- [ ] Detect completed `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi` case-insensitively.
+- [ ] Add `iPad1Player ile Aç` action for completed video files.
+- [ ] Open `ipad1player://open?path=<encoded-path>` only after the local file is complete and accessible.
+- [ ] Do not add video decode/playback/subtitle logic to FTPDownloader.
 - [ ] Add `Dosyalarda Göster` using `ipad1files://show?path=<encoded-path>`.
-- [ ] Handle unavailable sibling URL schemes gracefully.
-- [ ] Keep local UI limited to transfer status and hand-off; do not reintroduce local preview/file-manager controllers.
+- [ ] Handle unavailable sibling URL schemes gracefully without touching the completed file.
+- [ ] Keep local UI limited to FTP transfer status and hand-off.
 
 ## P2 — download destination preference + iPad1Files picker
 
@@ -60,25 +66,26 @@ See `SIBLING_APP_INSTRUCTIONS.md` for delegated work.
 - [ ] Validate callback path remains under `/var/mobile/Media/iPad1Files/Downloads/`.
 - [ ] Reject path traversal/out-of-root destinations.
 - [ ] Remember last selected folder.
-- [ ] Optionally support server-specific last folder if it remains simple.
-- [ ] If iPad1Files scheme is unavailable, fall back to canonical Downloads without losing transfer state.
+- [ ] If iPad1Files scheme is unavailable, fall back to canonical Downloads without losing FTP transfer state.
 
-## P3 — PDF post-download preference
+## P3 — completed-file preferences
 
-- [ ] Add preference modes: `Her seferinde sor`, `Otomatik PDFReader ile aç`, `Sadece indir`.
-- [ ] Recommended initial default: `Her seferinde sor`.
-- [ ] If auto-open is selected and `ipad1pdf://` is unavailable, leave file intact and show a useful status.
+- [ ] PDF modes: `Her seferinde sor`, `Otomatik PDFReader ile aç`, `Sadece indir`.
+- [ ] Recommended PDF default: `Her seferinde sor`.
+- [ ] If `ipad1pdf://` is unavailable, leave the file intact and show useful status.
 - [ ] Verify no duplicate PDF copy is created.
+- [ ] Consider a similarly lightweight video completion preference only after physical UX testing; do not add playback settings to FTPDownloader.
 
-## P4 — v1.4 transfer manager
+## P4 — v1.4 FTP transfer manager
 
-- [ ] Pause download.
+- [ ] Pause FTP download.
 - [ ] Resume with FTP REST/offset where supported.
 - [ ] Detect unsupported resume behavior cleanly.
 - [ ] Cancel transfer.
 - [ ] FIFO queue.
+- [ ] Keep active concurrency deliberately low on iPad 1; preferred starting point is one active FTP transfer.
 - [ ] Limit queue length or otherwise keep metadata bounded.
-- [ ] Retry failed transfer.
+- [ ] Retry failed FTP transfer.
 - [ ] Connection-loss recovery.
 - [ ] ETA calculation with low CPU overhead.
 - [ ] Overwrite / Resume / Rename collision choice.
@@ -87,8 +94,6 @@ See `SIBLING_APP_INSTRUCTIONS.md` for delegated work.
 - [ ] Verify no whole-file buffering.
 
 ## P5 — FTP remote UX
-
-Competitor review shows search/sort/connection management are valid FTP-client responsibilities, while local editing/preview/media belong to sibling apps.
 
 - [ ] Improve Saved Servers editor.
 - [ ] Edit saved profile.
@@ -99,19 +104,19 @@ Competitor review shows search/sort/connection management are valid FTP-client r
 - [ ] **Source implemented, physical test pending:** folders-first toggle.
 - [x] Human-readable remote file size already present in row UI; preserve it.
 - [ ] Remote date/time metadata where server listing format permits reliable parsing.
-- [ ] Upload target selection remains remote-path responsibility.
+- [ ] Upload target selection remains remote-FTP-path responsibility.
 - [ ] Keep recursive remote search bounded/cancellable if ever implemented.
 
 ## P6 — app-family integration polish
 
 - [ ] Verify folder picker round-trip with iPad1Files on physical iPad 1.
 - [ ] Verify PDF hand-off with iPad1PDFReader installed.
+- [ ] Verify video hand-off with iPad1Player installed.
 - [ ] Verify `Dosyalarda Göster` when iPad1Files scheme is available.
 - [ ] Confirm all sibling-app actions use the same physical file.
 - [ ] Replace temporary FTPDownloader local upload chooser with physically verified iPad1Files `pickFile` hand-off.
 - [ ] Register/handle `ipad1ftp://fileSelected?path=...` only when the iPad1Files contract is implemented and verified.
 - [ ] Do not introduce an Open With registry into FTPDownloader.
-- [ ] Do not add terminal, shell, VNC, PDF rendering, ZIP, text editor or general local file-manager functionality.
 
 ## P7 — credential hardening
 
@@ -119,6 +124,16 @@ Competitor review shows search/sort/connection management are valid FTP-client r
 - [ ] Add “do not save password” option.
 - [ ] Polish Anonymous FTP support.
 - [ ] Preserve existing saved-profile compatibility where practical.
+
+## Delegated to iPad1Downloader — do not implement here
+
+- [ ] Generic HTTP downloads.
+- [ ] Generic HTTPS downloads.
+- [ ] Browser/web URL download workflows.
+- [ ] HTTP redirects/cookies/headers.
+- [ ] HTTP/HTTPS resume semantics.
+- [ ] HTTP/HTTPS queue/retry/failure handling.
+- [ ] HTTP/HTTPS media download completion routing may mirror the same Player/PDFReader/Files hand-off contracts, but implementation belongs to iPad1Downloader.
 
 ## Experimental — SFTP / FTPS
 
@@ -130,7 +145,7 @@ Competitor review shows search/sort/connection management are valid FTP-client r
 
 ## Explicit non-goals
 
-Do not add advanced local copy/move, general folder management, favorites, filesystem-wide local search, classification, rich preview framework, full PDF reader functionality, ZIP manager, text editor, Open With registry, terminal/shell, VNC/remote desktop, OCR, AI/ML, whole-file RAM buffering or large background caches.
+Do not add HTTP/HTTPS downloader behavior, browser-download workflows, advanced local copy/move, general folder management, favorites, filesystem-wide local search, classification, rich preview framework, media playback/codecs/subtitles, full PDF reader functionality, ZIP manager, text editor, Open With registry, terminal/shell, VNC/remote desktop, OCR, AI/ML, whole-file RAM buffering or large background caches.
 
 ## Definition of done for v1.3
 
@@ -138,11 +153,11 @@ v1.3 is done only when:
 
 1. clean build/package/install succeeds on the physical iPad 1;
 2. canonical shared download root is used;
-3. no duplicate physical copy is created for new transfers;
+3. no duplicate physical copy is created for new FTP transfers;
 4. remote directory navigation never requires manual `/` correction;
-5. download/upload and remote command regressions pass;
-6. PDF hand-off opens the same physical file;
-7. local UI remains lightweight and transfer-oriented;
+5. FTP download/upload and remote command regressions pass;
+6. PDF and video completion hand-offs open the same physical file when the relevant sibling app is installed;
+7. local UI remains lightweight and FTP-transfer-oriented;
 8. sibling-owned functionality is delegated instead of duplicated;
-9. folder-picker/preference work is either implemented and verified or explicitly deferred to the next tagged build;
+9. folder-picker/preference work is either implemented and verified or explicitly deferred;
 10. `TESTING.md`, `CHANGELOG.md`, `SESSION.md`, `INTEGRATION.md` and `SIBLING_APP_INSTRUCTIONS.md` reflect actual tested behavior.
