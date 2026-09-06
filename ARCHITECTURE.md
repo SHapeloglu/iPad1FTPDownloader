@@ -2,33 +2,36 @@
 
 ## Overview
 
-iPad1FTPDownloader is the **network-transfer specialist** for the iPad 1 application family. It is designed for first-generation iPads running iOS 5.1.1 with 256 MB RAM.
+iPad1FTPDownloader is the **FTP specialist** for the iPad 1 application family. It is designed for first-generation iPads running iOS 5.1.1 with 256 MB RAM.
 
-It must remain focused on remote FTP operations and efficient streamed transfer. General local filesystem management belongs to iPad1Files. PDF rendering belongs to iPad1PDFReader.
+It must remain focused on remote FTP operations and efficient streamed FTP transfer. Generic HTTP/HTTPS downloading belongs to iPad1Downloader. General local filesystem management belongs to iPad1Files. Media playback belongs to iPad1Player. PDF rendering belongs to iPad1PDFReader.
 
 ## Mandatory sibling-app ownership gate
 
-Before proposing, designing or implementing **any** new feature, first determine which application in the iPad 1 family owns that responsibility.
-
-Do not implement a feature inside iPad1FTPDownloader merely because a competing FTP/file-manager application includes it.
-
-Mandatory decision flow:
+Before proposing, designing or implementing **any** new feature, first determine which application owns the responsibility.
 
 ```text
 New feature request
       ↓
 Which specialist app owns this responsibility?
       ↓
-Network transfer / remote FTP operation → iPad1FTPDownloader
-Local filesystem / picker / file-management → iPad1Files
-Terminal / shell / command execution → iPad1Terminal
-Remote desktop / VNC → iPad1VNC
-PDF rendering / reading → iPad1PDFReader
+FTP transfer / remote FTP operation → iPad1FTPDownloader
+HTTP/HTTPS download                 → iPad1Downloader
+Local filesystem / picker           → iPad1Files
+Video playback / codecs / subtitles → iPad1Player
+PDF rendering / reading             → iPad1PDFReader
+Terminal / shell                     → iPad1Terminal
+VNC / remote desktop                 → iPad1VNC
       ↓
 If another app owns it: integrate/hand off; do not duplicate it here.
 ```
 
-This ownership check is required for every roadmap item, competitor-derived suggestion and implementation task. Cross-app integration should use shared physical paths and lightweight URL-scheme hand-offs where practical.
+A file's type does not determine transfer ownership. Transport determines the downloader:
+
+- video over FTP -> iPad1FTPDownloader performs the transfer, then hands the completed file to iPad1Player;
+- video over HTTP/HTTPS -> iPad1Downloader performs the transfer, then hands the completed file to iPad1Player.
+
+Never add a feature here solely because a competitor bundles FTP, HTTP downloading, file management and playback into one app.
 
 ## Platform constraints
 
@@ -41,7 +44,7 @@ This ownership check is required for every roadmap item, competitor-derived sugg
 - Theos
 - UIKit APIs available to iOS 5
 - CFNetwork / CFFTP
-- stream-based transfers
+- stream-based FTP transfers
 
 ## Application-family flow
 
@@ -52,10 +55,13 @@ iPad1FTPDownloader
    ↓
 /var/mobile/Media/iPad1Files/Downloads/
    ↓
-iPad1Files
-   ↓
-iPad1PDFReader
+completed-file hand-off
+   ├─ video -> iPad1Player
+   ├─ PDF   -> iPad1PDFReader
+   └─ other -> iPad1Files
 ```
+
+HTTP/HTTPS sources follow a separate path through iPad1Downloader and are not implemented by this application.
 
 ## Shared storage boundary
 
@@ -67,19 +73,11 @@ Canonical local download root:
 
 The directory must be created if missing.
 
-The old path:
-
-```text
-/var/mobile/Media/iPad1FTPDownloads/
-```
-
-is deprecated for new downloads.
+The old path `/var/mobile/Media/iPad1FTPDownloads/` is deprecated for new downloads.
 
 ### Single physical file invariant
 
-A completed transfer is stored once, directly at its canonical location.
-
-Do not copy the same file into a second app-owned folder.
+A completed transfer is stored once, directly at its canonical location. Do not copy the same file into another app-owned folder merely for integration.
 
 ## Core layers
 
@@ -87,48 +85,35 @@ Do not copy the same file into a second app-owned folder.
 
 Responsibilities:
 
-- connection fields;
-- current remote path;
+- FTP connection fields;
+- current remote FTP path;
 - remote directory table;
 - remote search/sort controls;
-- transfer progress/speed;
-- transfer queue state;
-- lightweight list of completed downloads;
+- FTP transfer progress/speed;
+- FTP transfer queue state;
+- lightweight completed-transfer results;
 - sibling-app hand-off actions;
-- error/status feedback.
+- FTP error/status feedback.
 
-The UI must not grow into a general-purpose file manager.
+The UI must not grow into a browser downloader, general-purpose file manager, media player or PDF reader.
 
 ### Canonical remote-path helper
 
-One shared helper must normalize remote **directory** paths before they are stored or used.
-
-Invariant:
+Every remote FTP directory path must:
 
 ```text
-starts with /
-ends with /
+start with /
+end with /
 root is exactly /
 ```
 
-The same helper must be used by:
-
-- manual path entry;
-- current-path assignment;
-- child-directory navigation;
-- parent navigation;
-- refresh;
-- FTP URL construction.
-
-Do not duplicate path-fixing logic across controllers.
+Use one canonical helper for manual entry, current-path assignment, child navigation, parent navigation, refresh and FTP URL construction.
 
 ### FTP browsing layer
 
-`FTPBrowser`
+`FTPBrowser` owns FTP directory listing only:
 
-Responsibilities:
-
-- build FTP directory URLs from already-normalized directory paths;
+- build FTP directory URLs from normalized paths;
 - apply credentials;
 - read directory-listing streams;
 - parse server listing into file/folder metadata;
@@ -136,169 +121,143 @@ Responsibilities:
 
 Do not recursively cache the full server tree.
 
-### Download layer
+### FTP download layer
 
-`FTPDownloader`
-
-Responsibilities:
+`FTPDownloader` owns FTP transfer mechanics:
 
 - open CFFTP read stream;
-- stream directly to `/var/mobile/Media/iPad1Files/Downloads/`;
+- stream directly to disk;
 - create the canonical local directory if needed;
 - report progress and speed;
-- support pause/resume using FTP transfer offsets where server/CFNetwork support permits it;
+- support pause/resume through FTP offsets where server/CFNetwork support permits it;
 - close streams safely on finish/failure/pause/cancel.
 
-No post-download copy to iPad1Files is permitted.
+No post-download copy is permitted for sibling integration.
 
 ### Upload layer
 
-`FTPUploader`
-
-Responsibilities:
+`FTPUploader` owns FTP upload only:
 
 - read local files incrementally;
 - write to FTP output stream;
 - report sent bytes and speed;
 - avoid whole-file buffering.
 
-Uploads may originate from the canonical shared Downloads root or from a local path explicitly handed in by iPad1Files.
+The local source path may be handed in by iPad1Files.
 
 ### Remote command layer
 
-`FTPCommandClient`
+`FTPCommandClient` owns remote FTP operations:
 
-Responsibilities:
-
-- `DELE` remote file delete;
-- `RMD` empty-directory remove;
-- `MKD` directory creation;
-- `RNFR` / `RNTO` rename.
-
-These operations stay in iPad1FTPDownloader because they are remote FTP operations.
+- `DELE`;
+- `RMD`;
+- `MKD`;
+- `RNFR` / `RNTO`.
 
 ### Transfer manager
 
-`TransferQueue` and related transfer-state code own:
+`TransferQueue` and related FTP transfer-state code own:
 
 - metadata-only FIFO queue;
-- current transfer state;
+- current FTP transfer state;
 - pause/resume/cancel/retry;
-- advancement to the next queued item;
-- small transfer history if implemented.
+- failed-transfer recovery;
+- bounded history if implemented.
 
-The queue must never retain file contents.
+The queue must never retain file contents. On iPad 1, prefer one active transfer at a time or similarly low bounded concurrency.
 
-### Lightweight local downloads view
+## Completed-file hand-off
 
-Allowed responsibilities:
+Hand-off happens only after a transfer finishes successfully and the local file is accessible.
 
-- list completed downloads;
-- show basic transfer result information;
-- request open/hand-off actions.
+### Video
 
-Not owned here:
-
-- advanced local copy/move;
-- general folder management;
-- favorites;
-- filesystem-wide search;
-- classification;
-- rich/general preview framework;
-- ZIP management;
-- text editing;
-- Open With registry.
-
-Those belong to iPad1Files or a sibling specialist application.
-
-## PDF hand-off
-
-When a completed file has a `.pdf` extension, the app may offer:
+Case-insensitive extensions:
 
 ```text
-PDFReader ile Aç
+.mkv .mp4 .mov .m4v .avi
 ```
 
-using:
+Use:
+
+```text
+ipad1player://open?path=<percent-encoded-absolute-path>
+```
+
+FTPDownloader must not decode, render, seek, inspect subtitles or play video.
+
+### PDF
+
+Use:
 
 ```text
 ipad1pdf://open?path=<percent-encoded-absolute-path>
 ```
 
-The same canonical physical file must be opened. Never copy it merely for hand-off.
+### Other files / show in files
 
-## iPad1Files hand-off
-
-Optional scheme:
+Use:
 
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-Use this for **Dosyalarda Göster** when the sibling app supports it.
+All hand-offs use the same physical file.
 
-## Saved servers
+## Explicit iPad1Downloader boundary
 
-Saved profile fields may include:
+Do not implement these in iPad1FTPDownloader:
 
-- display name;
-- host;
-- port;
-- username;
-- password;
-- initial remote path.
+- generic HTTP/HTTPS download;
+- browser/web URL download workflows;
+- HTTP redirects;
+- HTTP cookies/headers;
+- HTTP/HTTPS resume semantics;
+- HTTP/HTTPS queue/retry/failure management.
 
-Credential storage should eventually use an iOS-5-compatible Keychain implementation.
+Those belong to iPad1Downloader.
 
-## FTP UX scope
+## Local browser scope
 
-The following remain first-class product responsibilities:
-
-- FTP connection;
-- remote browse;
-- download/upload;
-- pause/resume/cancel;
-- queue/retry;
-- progress/speed/ETA;
-- saved servers;
-- remote search;
-- sorting;
-- rename/delete/MKD/RMD.
+Allowed here only for transfer-oriented results and sibling-app hand-off. General local copy/move, folder management, favorites, filesystem-wide search, ZIP/archive, rich preview, text editing and Open With belong to iPad1Files or another specialist app.
 
 ## Secure protocol research boundary
 
 ### SFTP
 
-Not provided by CFFTPStream. Requires a real SSH/SFTP library such as libssh2 compiled for armv7/iOS 5.
-
-SFTP integration is experimental until a standalone proof-of-concept has been built and profiled on the physical iPad 1.
+SFTP is not provided by CFFTPStream. Any implementation requires a real SSH/SFTP library compiled for armv7/iOS 5 and physical-device profiling before integration.
 
 ### FTPS
 
-Requires a TLS-aware FTP control/data implementation. It must be researched separately from SFTP.
+FTPS requires a real TLS-aware FTP implementation and must be evaluated separately.
 
-Do not claim FTPS merely because plain CFFTPStream works.
+## Streaming boundary
+
+Future direct media streaming is not automatically assigned to FTPDownloader or Player. It must first pass the suite responsibility gate. Network transport state and media decode/render state must remain separable.
 
 ## Memory policy
 
 ### Safe
 
-- streaming download/upload;
+- streamed FTP read/write;
 - small transfer buffers, approximately 8–16 KB class;
-- queue metadata;
-- path/URL hand-off.
+- bounded queue metadata;
+- path/URL hand-offs.
 
 ### Caution
 
+- simultaneous transfers;
 - recursive remote search;
-- very long transfer queues;
-- excessive history retention;
+- very long queues;
 - heavy secure-protocol dependencies.
 
 ### Forbidden by architecture
 
 - loading complete transferred files into RAM;
-- duplicate physical files created solely for app integration;
+- HTTP/HTTPS downloader subsystem;
+- duplicate physical files for integration;
+- media decode/playback;
+- PDF rendering;
 - general rich-preview subsystem;
 - OCR;
 - AI/ML;
@@ -320,16 +279,14 @@ jailbroken iPad 1
      dpkg -i
 ```
 
-Legacy SSH may require per-command `HostKeyAlgorithms=+ssh-rsa`.
-
 ## Ownership decision rule
 
-- Primarily network transfer → **iPad1FTPDownloader**
-- Primarily general local file management → **iPad1Files**
-- Primarily terminal/shell/command execution → **iPad1Terminal**
-- Primarily remote desktop/VNC → **iPad1VNC**
-- Primarily PDF reading/rendering → **iPad1PDFReader**
+- FTP transfer / remote FTP operation -> **iPad1FTPDownloader**
+- HTTP/HTTPS download -> **iPad1Downloader**
+- Local filesystem / picker -> **iPad1Files**
+- Video playback / codecs / subtitles -> **iPad1Player**
+- PDF reading / rendering -> **iPad1PDFReader**
+- Terminal / shell -> **iPad1Terminal**
+- VNC / remote desktop -> **iPad1VNC**
 
-This decision must be made **before** implementation. If another specialist app owns the capability, iPad1FTPDownloader should integrate with that app rather than duplicate its subsystem.
-
-Integration must use canonical shared paths and lightweight hand-offs, not duplicated subsystems or duplicated files.
+This decision must be made before implementation. Prefer shared physical paths and lightweight URL-scheme hand-offs over duplicated subsystems or duplicated files.
