@@ -2,7 +2,7 @@
 
 ## Latest hand-off
 
-Date: 2026-08-29
+Date: 2026-09-06
 
 ## Working context
 
@@ -31,7 +31,7 @@ The IP can change. Verify before deployment.
 - Objective-C
 - non-ARC / MRC
 - Theos
-- CFNetwork / CFFTP
+- CFNetwork / CFFTP for current FTP transport
 - stream-based transfer
 
 ## Confirmed history
@@ -89,21 +89,24 @@ The normalization helper is centralized in `FTPPathUtils` and used by the UI/con
 
 ## Authoritative integration architecture
 
-iPad1FTPDownloader is the **network-transfer specialist** in the iPad 1 app family.
+iPad1FTPDownloader is the **network-transfer specialist** in the iPad 1 app family. `INTEGRATION.md` is authoritative for cross-app ownership and hand-off contracts.
 
-Canonical flow:
+Canonical completed-download flow:
 
 ```text
-FTP Server
+FTP / future HTTP(S) source
    ↓
 iPad1FTPDownloader
    ↓
 /var/mobile/Media/iPad1Files/Downloads/
    ↓
-iPad1Files
-   ↓
-iPad1PDFReader
+file-type hand-off
+   ├─ .mkv/.mp4/.mov/.m4v/.avi -> iPad1Player
+   ├─ .pdf                     -> iPad1PDFReader
+   └─ other                    -> iPad1Files
 ```
+
+The current implemented transport is FTP through CFNetwork/CFFTP. HTTP/HTTPS downloading is a network-transfer responsibility of Downloader if implemented later, but is not considered implemented or working until source/build/physical-device verification exists.
 
 ### Canonical download root
 
@@ -123,7 +126,38 @@ Do not create new downloads under:
 
 ### Single physical file rule
 
-One transferred file = one physical file. Never copy it merely to integrate with iPad1Files or iPad1PDFReader.
+One transferred file = one physical file. Never copy it merely to integrate with iPad1Files, iPad1Player or iPad1PDFReader.
+
+## Media download / Player boundary
+
+Media file downloading remains a Downloader responsibility. Player must not own or duplicate:
+
+- download queue;
+- progress;
+- pause/resume;
+- retry;
+- failed-transfer management;
+- transfer recovery.
+
+For completed video files with case-insensitive extensions `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi`, the desired completion action is:
+
+```text
+İndirme tamamlandı
+
+iPad1Player ile Aç
+Dosyalarda Göster
+Tamam
+```
+
+Recommended hand-off:
+
+```text
+ipad1player://open?path=<percent-encoded-absolute-path>
+```
+
+Downloader must pass only a completed, accessible local file path. It must not decode/play media during download. Decode, playback, seek and subtitle handling stay in iPad1Player.
+
+Large files must be streamed to disk, never fully buffered in RAM. Concurrency must remain deliberately low on iPad 1. Future streaming requires a fresh suite responsibility review before implementation so transfer and playback ownership do not become mixed.
 
 ## Current v1.3 source state
 
@@ -137,6 +171,7 @@ Still unverified in the current build unless separately recorded after this hand
 - saved-server regression;
 - remote rename/delete/MKD/RMD regressions for this exact build;
 - PDF completion hand-off;
+- iPad1Player video completion hand-off (architecturally agreed, source implementation/test pending);
 - new download destination preference + iPad1Files folder-picker callback.
 
 Do not claim those features work until tested on the physical device.
@@ -215,19 +250,20 @@ Recommended default: `Her seferinde sor`.
 
 ### Keep in iPad1FTPDownloader
 
-- FTP connection;
-- remote browse;
-- download/upload;
+- FTP connection and remote browse;
+- FTP download/upload;
+- future HTTP/HTTPS file download transport if later implemented;
 - pause/resume/cancel/retry;
 - progress/speed/ETA;
-- FIFO queue;
+- bounded/FIFO queue;
+- failed transfer handling;
 - saved servers;
 - remote search/sort;
 - remote rename/delete;
 - MKD/RMD;
 - transfer-oriented local results list;
 - download-location preference;
-- sibling-app path hand-off.
+- completed-file sibling-app path hand-off.
 
 ### Delegate to iPad1Files
 
@@ -240,6 +276,13 @@ Recommended default: `Her seferinde sor`.
 - classification;
 - rich/general preview;
 - ZIP/text-editor/Open With features.
+
+### Delegate to iPad1Player
+
+- video decode/playback;
+- seek/playback controls;
+- codec/media-rendering behavior;
+- subtitle discovery/rendering.
 
 ### Delegate to iPad1PDFReader
 
@@ -266,6 +309,16 @@ ipad1files://pickFile?root=...&callback=...
 
 Picker must remain constrained to its supplied root.
 
+### iPad1Player
+
+Expected scheme:
+
+```text
+ipad1player://open?path=<percent-encoded-absolute-path>
+```
+
+Player must open the same completed physical file and must work both when cold-launched and when already running. It must not absorb Downloader transfer state/queue/retry logic.
+
 ### iPad1PDFReader
 
 Expected scheme:
@@ -284,6 +337,7 @@ PDFReader must open the same physical file and must work both when cold-launched
 - one-file rule;
 - centralized remote path invariant;
 - same-path PDF/iPad1Files hand-off;
+- add same-path iPad1Player hand-off for completed video files;
 - download destination preference model;
 - keep local UI lightweight;
 - build/install/test on physical iPad 1.
@@ -295,7 +349,9 @@ PDFReader must open the same physical file and must work both when cold-launched
 - retry;
 - progress/speed/ETA;
 - overwrite/resume/rename collision handling;
-- small metadata-only transfer history.
+- failed-download management;
+- small metadata-only transfer history;
+- deliberately low concurrency on iPad 1.
 
 ### v1.5 — FTP remote UX
 
@@ -309,6 +365,7 @@ PDFReader must open the same physical file and must work both when cold-launched
 
 - robust picker callback flow;
 - robust `Dosyalarda Göster`;
+- robust iPad1Player / iPad1PDFReader same-file hand-off;
 - same-file verification;
 - upload-from-iPad1Files hand-in if implemented.
 
@@ -318,6 +375,14 @@ PDFReader must open the same physical file and must work both when cold-launched
 - optional no-save-password behavior;
 - Anonymous FTP polish.
 
+### HTTP / HTTPS download transport
+
+Network-transfer scope if implemented later. Must use stream-to-disk behavior and pass physical iPad testing; do not claim support from architecture alone.
+
+### Streaming
+
+Not automatically approved. Must first pass the suite responsibility filter and preserve a clean network-transfer vs media-playback boundary.
+
 ### SFTP / FTPS
 
 Experimental research only. Do not make them release dependencies. Profile any library on physical iPad 1 before integration.
@@ -326,7 +391,7 @@ Experimental research only. Do not make them release dependencies. Profile any l
 
 Safe:
 
-- streaming transfers;
+- streaming transfers directly to disk;
 - small buffers;
 - small queue/history metadata;
 - small path/preference strings;
@@ -334,6 +399,7 @@ Safe:
 
 Use caution:
 
+- simultaneous downloads on iPad 1;
 - recursive remote search;
 - very long queues;
 - heavy secure-protocol libraries.
@@ -341,6 +407,7 @@ Use caution:
 Do not add:
 
 - whole-file RAM buffering;
+- video decode/playback in Downloader;
 - rich local preview framework;
 - OCR;
 - AI/ML;
@@ -356,9 +423,10 @@ Continue from the physically installed current v1.3 build and verify in this ord
 2. test the folders-first toggle in both states and after changing remote directory;
 3. test upload/progress/speed and saved-server regressions;
 4. test rename/delete/MKD/RMD regressions;
-5. test PDF completion hand-off;
-6. implement the new download destination preference + iPad1Files folder-picker callback;
-7. update docs only with physically verified results.
+5. implement and then physically test completed-video iPad1Player hand-off without changing transfer ownership;
+6. test PDF completion hand-off;
+7. implement the new download destination preference + iPad1Files folder-picker callback;
+8. update docs only with physically verified results.
 
 ## Deployment
 
