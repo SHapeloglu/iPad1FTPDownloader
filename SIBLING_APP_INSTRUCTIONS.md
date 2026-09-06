@@ -8,8 +8,9 @@ This document defines work discovered while reviewing iPad1FTPDownloader that be
 
 Before implementing any feature, determine its primary owner:
 
-- FTP/network transfer -> iPad1FTPDownloader
+- FTP/network transfer, including media file download -> iPad1FTPDownloader
 - local filesystem, folder/file picking, copy/move, ZIP, general preview -> iPad1Files
+- video decode/playback/subtitle handling -> iPad1Player
 - PDF rendering/reading/annotation -> iPad1PDFReader
 - shell/terminal/command execution -> iPad1Terminal
 - VNC/remote desktop -> iPad1VNC
@@ -90,6 +91,37 @@ The same physical file under the shared filesystem must be shown. No copy is all
 
 ---
 
+## iPad1Player instructions
+
+Support the completed-file hand-off contract:
+
+```text
+ipad1player://open?path=<percent-encoded-absolute-path>
+```
+
+FTPDownloader will use it for completed files with these case-insensitive extensions:
+
+```text
+.mkv
+.mp4
+.mov
+.m4v
+.avi
+```
+
+Requirements:
+
+- open the same physical completed file; no copy;
+- work both cold and warm launch;
+- accept only an accessible local path from Downloader;
+- media decode, playback UI, seeking, codec behavior and subtitle discovery/rendering stay entirely in iPad1Player;
+- Player must not take ownership of Downloader queue, progress, pause/resume, retry or failed-transfer management;
+- FTPDownloader must not decode or play video while a transfer is in progress.
+
+Future streaming must be designed only after a suite responsibility review. Do not merge Downloader network-transfer state with Player decode/render state merely to add streaming.
+
+---
+
 ## iPad1PDFReader instructions
 
 Support:
@@ -132,6 +164,14 @@ If a saved FTP host is also used for VNC, a future integration may pass host met
 Any future scheme must be defined first by iPad1VNC and should pass only lightweight connection metadata, never duplicate VNC logic inside FTPDownloader.
 
 ---
+
+## Downloader transfer constraints relevant to all siblings
+
+- completed files are handed off by path only;
+- large files are streamed to disk rather than buffered in RAM;
+- iPad 1 concurrency must remain deliberately low;
+- transfer queue/progress/pause-resume/retry/failure handling stays in Downloader;
+- sibling apps receive only completed accessible files unless a separately designed and approved streaming contract exists.
 
 ## Removal rule
 
