@@ -8,7 +8,8 @@ This document defines work discovered while reviewing iPad1FTPDownloader that be
 
 Before implementing any feature, determine its primary owner:
 
-- FTP/network transfer, including media file download -> iPad1FTPDownloader
+- FTP transfer / remote FTP operations -> iPad1FTPDownloader
+- HTTP/HTTPS downloads -> iPad1Downloader
 - local filesystem, folder/file picking, copy/move, ZIP, general preview -> iPad1Files
 - video decode/playback/subtitle handling -> iPad1Player
 - PDF rendering/reading/annotation -> iPad1PDFReader
@@ -19,9 +20,37 @@ If another application owns the capability, integrate by shared physical path an
 
 ---
 
+## iPad1Downloader instructions
+
+HTTP/HTTPS downloading belongs here, not in iPad1FTPDownloader.
+
+Expected ownership:
+
+- generic HTTP downloads;
+- generic HTTPS downloads;
+- browser/web URL download workflows;
+- redirects;
+- cookies/headers where required by download transport;
+- HTTP/HTTPS resume semantics;
+- HTTP/HTTPS queue/progress/retry/failure management;
+- stream-to-disk behavior for large files;
+- deliberately low concurrency on iPad 1.
+
+Recommended completed-file routing should mirror the suite contracts:
+
+```text
+.mkv/.mp4/.mov/.m4v/.avi -> ipad1player://open?path=...
+.pdf                     -> ipad1pdf://open?path=...
+other                    -> ipad1files://show?path=...
+```
+
+Only completed, accessible local file paths should be handed to sibling apps. Do not copy files merely for integration.
+
+---
+
 ## iPad1Files instructions
 
-### 1. Folder picker
+### Folder picker
 
 Provide:
 
@@ -41,12 +70,10 @@ Requirements:
 - picker must stay inside the supplied root;
 - return an absolute canonical path;
 - do not copy the selected folder or transferred file;
-- work when cold-launched and when already running;
+- work cold and warm launch;
 - preserve iPad 1 / iOS 5.1.1 / armv7 / MRC compatibility.
 
-### 2. File picker for FTP upload
-
-The current FTPDownloader still has a temporary local Downloads chooser for upload. Replace that ownership with an iPad1Files picker contract before removing the fallback.
+### File picker for FTP upload
 
 Recommended contract:
 
@@ -62,13 +89,13 @@ ipad1ftp://fileSelected?path=<percent-encoded-absolute-path>
 
 Requirements:
 
-- iPad1Files owns all local browsing UI;
-- FTPDownloader receives only the selected path and performs streamed upload;
+- iPad1Files owns local browsing UI;
+- FTPDownloader receives only the selected path and performs streamed FTP upload;
 - do not duplicate files;
 - reject inaccessible/non-file results cleanly;
 - keep picker memory usage bounded.
 
-### 3. Show downloaded file
+### Show downloaded file
 
 Support:
 
@@ -76,9 +103,9 @@ Support:
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-The same physical file under the shared filesystem must be shown. No copy is allowed.
+The same physical file must be shown. No copy is allowed.
 
-### 4. Features that stay entirely in iPad1Files
+### Features that stay entirely in iPad1Files
 
 - local copy/move;
 - folder management;
@@ -99,7 +126,7 @@ Support the completed-file hand-off contract:
 ipad1player://open?path=<percent-encoded-absolute-path>
 ```
 
-FTPDownloader will use it for completed files with these case-insensitive extensions:
+FTPDownloader may call it only after a successful FTP download for these case-insensitive extensions:
 
 ```text
 .mkv
@@ -113,12 +140,13 @@ Requirements:
 
 - open the same physical completed file; no copy;
 - work both cold and warm launch;
-- accept only an accessible local path from Downloader;
+- accept an accessible local path only;
 - media decode, playback UI, seeking, codec behavior and subtitle discovery/rendering stay entirely in iPad1Player;
-- Player must not take ownership of Downloader queue, progress, pause/resume, retry or failed-transfer management;
+- Player must not own FTPDownloader queue, progress, pause/resume, retry, cancellation or failed-transfer management;
+- Player must not own iPad1Downloader HTTP/HTTPS transfer lifecycle either;
 - FTPDownloader must not decode or play video while a transfer is in progress.
 
-Future streaming must be designed only after a suite responsibility review. Do not merge Downloader network-transfer state with Player decode/render state merely to add streaming.
+Future streaming requires a separate suite responsibility review. Do not merge downloader transfer state with Player decode/render state.
 
 ---
 
@@ -132,49 +160,35 @@ ipad1pdf://open?path=<percent-encoded-absolute-path>
 
 Requirements:
 
-- open the same physical downloaded PDF;
-- work both cold and warm launch;
+- open the same physical completed PDF;
+- work cold and warm launch;
 - rendering, zoom, page navigation, bookmark and highlight behavior stay entirely in iPad1PDFReader;
-- FTPDownloader must never embed PDF rendering or make a duplicate PDF copy.
+- downloader apps must never embed PDF rendering or create a duplicate PDF copy for hand-off.
 
 ---
 
 ## iPad1Terminal instructions
 
-Terminal and shell execution are outside FTPDownloader scope.
-
-If a future workflow needs to pass a downloaded script or remote-host context to Terminal, define a narrow hand-off contract in iPad1Terminal. FTPDownloader must not embed a shell, pseudo-terminal, SSH console or command interpreter.
-
-Potential future path hand-off, only after Terminal explicitly supports it:
-
-```text
-ipad1terminal://open?path=<percent-encoded-absolute-path>
-```
-
-Do not implement this scheme in FTPDownloader until the Terminal application owns and documents the receiving contract.
+Terminal and shell execution are outside FTPDownloader scope. Any future path/host hand-off must be defined first by iPad1Terminal.
 
 ---
 
 ## iPad1VNC instructions
 
-VNC/remote desktop is outside FTPDownloader scope.
-
-If a saved FTP host is also used for VNC, a future integration may pass host metadata to iPad1VNC. FTPDownloader must not embed framebuffer, VNC protocol or remote-desktop UI.
-
-Any future scheme must be defined first by iPad1VNC and should pass only lightweight connection metadata, never duplicate VNC logic inside FTPDownloader.
+VNC/remote desktop is outside FTPDownloader scope. Any future host-context hand-off must be defined first by iPad1VNC.
 
 ---
 
-## Downloader transfer constraints relevant to all siblings
+## Transfer constraints relevant to downloader apps
 
 - completed files are handed off by path only;
 - large files are streamed to disk rather than buffered in RAM;
-- iPad 1 concurrency must remain deliberately low;
-- transfer queue/progress/pause-resume/retry/failure handling stays in Downloader;
-- sibling apps receive only completed accessible files unless a separately designed and approved streaming contract exists.
+- iPad 1 concurrency remains deliberately low;
+- queue/progress/pause-resume/retry/failure handling stays with the downloader that owns the transport;
+- sibling reader/player apps receive only completed accessible files unless a separately approved streaming contract exists.
 
 ## Removal rule
 
-A temporary fallback inside FTPDownloader may remain only until the owning sibling app has a physically verified receiving contract. Once the hand-off is verified on iPad 1, remove the duplicate fallback from FTPDownloader.
+A temporary fallback inside FTPDownloader may remain only until the owning sibling app has a physically verified receiving contract. Once the hand-off is verified on iPad 1, remove duplicate fallback behavior where appropriate.
 
 Physical-device behavior is authoritative.
