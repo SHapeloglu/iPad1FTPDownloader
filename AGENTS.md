@@ -30,45 +30,38 @@ This file gives coding agents a compact operational contract for this repository
 
 ## Mandatory sibling-app ownership check
 
-Every new feature, competitor-derived suggestion and implementation task must first be classified by specialist ownership:
+- FTP transfer / remote FTP operation -> **iPad1FTPDownloader**
+- HTTP/HTTPS download -> **iPad1Downloader**
+- local filesystem / picker / file-management -> **iPad1Files**
+- video playback / codecs / subtitles -> **iPad1Player**
+- PDF rendering / reading -> **iPad1PDFReader**
+- terminal / shell -> **iPad1Terminal**
+- VNC / remote desktop -> **iPad1VNC**
 
-- network transfer / remote FTP operation → **iPad1FTPDownloader**
-- local filesystem / picker / file-management → **iPad1Files**
-- terminal / shell / command execution → **iPad1Terminal**
-- remote desktop / VNC → **iPad1VNC**
-- PDF rendering / reading → **iPad1PDFReader**
+Transport determines downloader ownership. A media file downloaded over FTP is still an iPad1FTPDownloader transfer; after successful completion, hand only the accessible local path to iPad1Player.
 
-If another application owns the responsibility, do **not** duplicate that subsystem inside iPad1FTPDownloader. Prefer shared physical paths and lightweight URL-scheme hand-off/integration.
-
-Never add a feature here solely because a competitor bundles it into one large application.
+Do not add HTTP/HTTPS downloader behavior to this repository. Do not add media playback behavior here. Prefer shared physical paths and lightweight URL-scheme hand-offs.
 
 ## Directory-path invariant
 
-Every remote directory path must be normalized to:
+Every remote FTP directory path must:
 
 - start with `/`
 - end with `/`
+- represent root as exactly `/`
 
-Root is exactly `/`.
-
-Examples:
-
-```text
-/
-/domains/
-/domains/example.com/public_html/
-```
-
-This invariant must hold in the UI state, navigation state and FTP URL construction.
+This invariant must hold in UI state, navigation state and FTP URL construction.
 
 ## Transfer principles
 
-- Stream downloads directly to disk.
-- Stream uploads directly from disk.
+- Stream FTP downloads directly to disk.
+- Stream FTP uploads directly from disk.
 - Keep transfer buffers small.
+- Keep active concurrency deliberately low on iPad 1.
 - Expose user-visible errors.
-- If implementing resume, verify server support and local file offset behavior.
+- If implementing resume, verify FTP server support and local file offset behavior.
 - Do not call a transfer complete until the stream ended cleanly.
+- Completed video may be handed to `ipad1player://open?path=...`; do not decode/play it here.
 
 ## Secure protocols
 
