@@ -2,24 +2,21 @@
 
 ## Purpose
 
-iPad1FTPDownloader is the **network-transfer specialist** in the iPad 1 application family. It must not evolve into a general filesystem manager, media player or PDF reader.
+iPad1FTPDownloader is the **FTP specialist** in the iPad 1 application family. It must not evolve into a general HTTP/HTTPS downloader, filesystem manager, media player or PDF reader.
 
-Canonical flow:
+Canonical transfer ownership:
 
 ```text
-FTP / future HTTP(S) source
-   ↓
-iPad1FTPDownloader
-   ↓
-/var/mobile/Media/iPad1Files/Downloads/
-   ↓
-file-type hand-off
-   ├─ video -> iPad1Player
-   ├─ PDF   -> iPad1PDFReader
-   └─ other -> iPad1Files
+FTP source        -> iPad1FTPDownloader
+HTTP/HTTPS source -> iPad1Downloader
+local filesystem  -> iPad1Files
+video playback    -> iPad1Player
+PDF reading       -> iPad1PDFReader
+terminal/shell    -> iPad1Terminal
+VNC               -> iPad1VNC
 ```
 
-The current implemented transport remains CFNetwork/CFFTP. HTTP/HTTPS download is an iPad1FTPDownloader/network-transfer responsibility if added later, but must not be claimed as implemented until source, build and physical iPad verification exist.
+A media file does not change transfer ownership. If a video is downloaded over FTP, iPad1FTPDownloader owns that transfer. If the same video is downloaded over HTTP/HTTPS, iPad1Downloader owns that transfer. iPad1Player owns only playback of an accessible local media file handed to it after transfer completion.
 
 ## Non-negotiable platform constraints
 
@@ -30,7 +27,7 @@ The current implemented transport remains CFNetwork/CFFTP. HTTP/HTTPS download i
 - Objective-C
 - non-ARC / MRC
 - Theos
-- CFNetwork / CFFTP for the current FTP implementation
+- CFNetwork / CFFTP for FTP
 - stream-based transfers
 
 ## Canonical shared download root
@@ -39,15 +36,15 @@ The current implemented transport remains CFNetwork/CFFTP. HTTP/HTTPS download i
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-Create the directory if missing. New downloads must not use `/var/mobile/Media/iPad1FTPDownloads/`.
+Create the directory if missing. New FTP downloads must not use `/var/mobile/Media/iPad1FTPDownloads/`.
 
 ## Single physical file rule
 
-One transfer produces one physical file. Do not copy a completed download into another app-owned directory for integration.
+One transfer produces one physical file. Do not copy a completed download into another app-owned directory merely for integration.
 
 ## Download destination behavior
 
-iPad1FTPDownloader owns the download-location **preference**, while iPad1Files owns the real folder-picker UI.
+iPad1FTPDownloader owns the destination preference for FTP transfers, while iPad1Files owns the actual folder-picker UI.
 
 Supported preference modes:
 
@@ -57,26 +54,12 @@ Her indirmede sor
 Her zaman Downloads'a indir
 ```
 
-The selected folder must remain inside:
-
-```text
-/var/mobile/Media/iPad1Files/Downloads/
-```
-
-and its descendants.
+The selected folder must remain inside `/var/mobile/Media/iPad1Files/Downloads/` and its descendants.
 
 ### Folder picker hand-off
 
-When the user chooses `Başka klasör seç`, call iPad1Files:
-
 ```text
 ipad1files://pickFolder?root=<percent-encoded-root>&callback=<percent-encoded-callback>
-```
-
-Recommended root:
-
-```text
-/var/mobile/Media/iPad1Files/Downloads/
 ```
 
 Recommended callback:
@@ -85,19 +68,15 @@ Recommended callback:
 ipad1ftp://folderSelected?path=<percent-encoded-absolute-path>
 ```
 
-The downloader validates the returned path is still under the canonical Downloads root before starting the transfer.
-
-The last selected folder may be persisted as a small path string. Server-specific last-folder metadata is allowed if useful and kept lightweight.
+FTPDownloader validates the returned path before starting the FTP transfer.
 
 ### Future upload picker
-
-A future upload may use:
 
 ```text
 ipad1files://pickFile?root=<percent-encoded-root>&callback=<percent-encoded-callback>
 ```
 
-with callback:
+Callback:
 
 ```text
 ipad1ftp://fileSelected?path=<percent-encoded-absolute-path>
@@ -105,11 +84,11 @@ ipad1ftp://fileSelected?path=<percent-encoded-absolute-path>
 
 Do not build a second general filesystem browser inside FTPDownloader.
 
-## Completion routing by file type
+## Completed-file routing
 
-Routing happens only **after a transfer completes successfully** and the local file is accessible. Downloader passes the existing absolute local path; it does not duplicate the file.
+Routing happens only after an FTP transfer finishes successfully and the local file is accessible. The existing absolute local path is handed off; the file is not duplicated.
 
-### Video
+### Video files
 
 Case-insensitive extensions:
 
@@ -131,27 +110,15 @@ Dosyalarda Göster
 Tamam
 ```
 
-Recommended Player hand-off contract:
+Player contract:
 
 ```text
 ipad1player://open?path=<percent-encoded-absolute-path>
 ```
 
-iPad1FTPDownloader must not decode, probe deeply, render or play video during download. Playback, codecs, subtitle discovery and media UI belong to iPad1Player.
+FTPDownloader must not decode, render or play video. Codec, seek, subtitle and playback UI remain entirely in iPad1Player.
 
-### PDF
-
-When a completed file extension is `.pdf` (case-insensitive), offer:
-
-```text
-İndirme tamamlandı
-
-PDFReader ile Aç
-Dosyalarda Göster
-Tamam
-```
-
-PDFReader hand-off:
+### PDF files
 
 ```text
 ipad1pdf://open?path=<percent-encoded-absolute-path>
@@ -159,106 +126,77 @@ ipad1pdf://open?path=<percent-encoded-absolute-path>
 
 ### Other files
 
-Use iPad1Files:
-
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-All completion actions use the same physical file; never copy it merely for integration.
+If a sibling scheme is unavailable, fail gracefully and leave the completed file untouched.
 
-### PDF post-download preference
+## FTP transfer ownership
 
-Support these lightweight modes:
+The following remain in iPad1FTPDownloader for FTP transfers and must not move to iPad1Player:
 
-```text
-Her seferinde sor
-Otomatik PDFReader ile aç
-Sadece indir
-```
-
-Recommended initial/default behavior is `Her seferinde sor` until physical-device UX testing says otherwise.
-
-If a sibling URL scheme is unavailable, fail gracefully and leave the downloaded file untouched.
-
-## Transfer ownership
-
-Transfer mechanics remain in iPad1FTPDownloader and must not move to iPad1Player:
-
-- download queue;
-- progress;
-- speed / ETA;
-- pause/resume;
-- retry;
-- cancellation;
+- FTP connection and authentication;
+- remote directory browsing;
+- FTP download/upload;
+- FTP transfer queue;
+- progress/speed/ETA;
+- pause/resume where FTP/server support permits it;
+- retry/cancel;
 - failed-transfer state and recovery;
 - collision handling;
-- connection-loss recovery.
+- connection-loss handling;
+- remote rename/delete;
+- MKD/RMD;
+- saved FTP servers;
+- remote search/sorting.
 
-Large media files must be streamed to disk. Whole-file buffering in RAM is forbidden. On iPad 1, keep concurrency deliberately low; prefer a bounded/FIFO transfer model over many simultaneous transfers.
+Large files must be streamed directly to disk. Whole-file RAM buffering is forbidden. On iPad 1, concurrency must remain deliberately low; prefer a bounded/FIFO model.
+
+## Explicit iPad1Downloader ownership
+
+These do **not** belong in iPad1FTPDownloader:
+
+- generic HTTP download;
+- generic HTTPS download;
+- browser/web URL download workflows;
+- HTTP redirect/cookie/header handling;
+- HTTP/HTTPS resume semantics;
+- HTTP/HTTPS download queue/retry/failure management.
+
+Those belong to **iPad1Downloader**. iPad1Downloader may use the same completed-file routing contracts to iPad1Player, iPad1PDFReader and iPad1Files, but it owns its own HTTP/HTTPS transfer lifecycle.
 
 ## Streaming boundary
 
-Future media streaming is not automatically a Downloader or Player feature merely because competitors provide it. Before any streaming design or implementation, run the suite responsibility gate and define a narrow contract between network transport and playback. Do not merge the Downloader transfer engine with Player decode/render responsibilities.
+Future direct media streaming is not automatically assigned to either Downloader or Player. It must first pass the suite responsibility gate. Do not merge transfer-state ownership with media decode/render ownership merely to add streaming.
 
 ## Local browser scope
 
-A lightweight local Downloads view is allowed only for transfer-oriented tasks:
+A lightweight local Downloads view is allowed only for transfer-oriented tasks such as showing FTP transfer results and requesting sibling-app hand-off.
 
-- list completed downloads;
-- show transfer result;
-- open/hand off a downloaded file.
-
-General filesystem features belong to iPad1Files:
-
-- advanced copy/move;
-- general folder management;
-- favorites;
-- filesystem-wide search;
-- file classification;
-- rich/general preview system;
-- ZIP/text-editor features;
-- Open With registry.
-
-## Network-transfer-owned functionality
-
-These remain in iPad1FTPDownloader:
-
-- FTP connection and remote folder browsing;
-- FTP download/upload;
-- future HTTP/HTTPS file download transport if implemented;
-- pause/resume/cancel/retry;
-- transfer progress/speed/ETA;
-- FIFO/bounded queue;
-- failed transfer handling;
-- remote rename/delete;
-- MKD/RMD;
-- saved servers;
-- remote search;
-- sorting;
-- completed-file sibling-app hand-off.
+General local filesystem functionality belongs to iPad1Files, including copy/move, folder management, filesystem-wide search, favorites, ZIP/archive, rich preview and Open With behavior.
 
 ## Remote path invariant
 
-Every remote FTP **directory** path must start with `/` and end with `/`. Root is exactly `/`.
-
-Correct:
+Every remote FTP directory path must:
 
 ```text
-/domains/example.com/public_html/css/
+start with /
+end with /
+root is exactly /
 ```
 
-This invariant applies to manual entry, current state, child navigation, parent navigation, refresh and FTP URL construction. Normalize before storing directory state, not only before a network request.
+This invariant applies to manual entry, current state, child navigation, parent navigation, refresh and FTP URL construction.
 
 ## Memory policy
 
 Safe:
 
-- streamed download/upload;
+- streamed FTP download/upload;
 - small transfer buffers;
-- FIFO/bounded queue metadata;
-- saved path/preference strings;
-- URL/path hand-offs.
+- bounded queue metadata;
+- path/preference strings;
+- URL-scheme hand-offs.
 
 Use caution:
 
@@ -270,20 +208,23 @@ Use caution:
 Do not add:
 
 - whole-file RAM buffering;
-- video decode/playback in Downloader;
-- PDF rendering in Downloader;
+- HTTP/HTTPS downloader subsystem;
+- video decode/playback;
+- PDF rendering;
 - OCR;
 - AI/ML;
 - large background caches;
-- heavy SMB/SFTP dependencies without profiling on physical iPad 1.
+- SMB expansion;
+- heavy SFTP dependencies without physical-device profiling.
 
 ## Ownership rule
 
-- Network transfer, including media file download → **iPad1FTPDownloader**
-- Local filesystem/folder-picker problem → **iPad1Files**
-- Video decode/playback/subtitles → **iPad1Player**
-- PDF reading/rendering → **iPad1PDFReader**
-- Terminal/shell → **iPad1Terminal**
-- VNC/remote desktop → **iPad1VNC**
+- FTP transfer / remote FTP operations -> **iPad1FTPDownloader**
+- HTTP/HTTPS download -> **iPad1Downloader**
+- Local filesystem / picker -> **iPad1Files**
+- Video decode / playback / subtitles -> **iPad1Player**
+- PDF reading / rendering -> **iPad1PDFReader**
+- Terminal / shell -> **iPad1Terminal**
+- VNC / remote desktop -> **iPad1VNC**
 
-Integration must use shared physical paths and lightweight URL-scheme hand-offs rather than duplicate files or duplicate subsystems.
+Integration must use the same physical file path and lightweight hand-offs rather than duplicated files or duplicated subsystems.
