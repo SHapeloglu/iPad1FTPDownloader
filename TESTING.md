@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This project targets hardware and software old enough that successful compilation is not sufficient proof. Physical-device testing on an iPad 1 running iOS 5.1.1 is required for release confidence.
+Successful compilation is not sufficient proof. Physical-device testing on an iPad 1 running iOS 5.1.1 is required for release confidence.
 
 ## Build verification
 
@@ -23,15 +23,14 @@ Pass criteria:
 
 ## Install verification
 
-Copy package to the reachable iPad IP:
-
 ```bash
 scp -o HostKeyAlgorithms=+ssh-rsa \
+-o PubkeyAcceptedAlgorithms=+ssh-rsa \
 packages/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb \
 root@192.168.1.2:/var/mobile/
 ```
 
-Install on device:
+On the iPad:
 
 ```bash
 dpkg -i /var/mobile/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb
@@ -41,80 +40,72 @@ killall SpringBoard
 
 Pass criteria:
 
-- `dpkg` reports successful setup.
-- Application bundle exists in `/Applications/`.
-- App appears on SpringBoard or remains launchable after cache refresh.
-- App does not immediately crash.
+- package setup succeeds;
+- app remains launchable;
+- app does not immediately crash.
 
 ## Core FTP connection tests
 
 ### Valid credentials
 
-- [ ] Enter host.
-- [ ] Enter port 21 or configured FTP port.
-- [ ] Enter valid username/password.
+- [ ] Enter host/port/username/password.
 - [ ] Connect to `/`.
 - [ ] Directory listing appears.
 
 ### Invalid credentials
 
-- [ ] Use an invalid password.
-- [ ] App displays a useful error.
+- [ ] Invalid password reports a useful error.
 - [ ] UI remains usable afterward.
 
 ### Unreachable host
 
-- [ ] Use an unreachable IP/host.
-- [ ] App reports connection failure.
+- [ ] Connection failure is reported.
 - [ ] App does not freeze.
 
 ## Directory-path regression tests
-
-This is a release-blocking area.
 
 - [ ] `/` stays `/`.
 - [ ] Manual `domains` becomes `/domains/`.
 - [ ] Manual `/domains` becomes `/domains/`.
 - [ ] Manual `/domains/` stays `/domains/`.
-- [ ] Tapping `example.com` from `/domains/` results in `/domains/example.com/`.
-- [ ] Tapping `public_html` results in `/domains/example.com/public_html/`.
-- [ ] Tapping a nested folder does not require manually adding `/`.
-- [ ] Parent navigation from `/domains/example.com/public_html/css/` produces `/domains/example.com/public_html/`.
+- [ ] Child navigation preserves trailing `/`.
+- [ ] Nested child navigation needs no manual slash correction.
+- [ ] Parent navigation returns to the correct parent.
 - [ ] Repeated parent navigation eventually produces `/`.
-- [ ] Refresh/listing at each level still works.
+- [ ] Refresh at each level preserves normalized state.
 
-## Download tests
+## FTP download tests
 
 - [ ] Download a small text file.
 - [ ] Download a medium binary/image file.
-- [ ] Download a larger file appropriate for available device storage.
+- [ ] Download a larger file appropriate for device storage.
 - [ ] Progress bytes increase.
 - [ ] Percentage appears when expected size is known.
 - [ ] Speed display updates.
-- [ ] Final local file exists under `/var/mobile/Media/iPad1FTPDownloads/`.
+- [ ] Final file exists under `/var/mobile/Media/iPad1Files/Downloads/` or the physically verified selected descendant folder.
+- [ ] No duplicate new copy appears under `/var/mobile/Media/iPad1FTPDownloads/`.
 - [ ] Local size matches remote size.
-- [ ] Download completion does not corrupt the next directory operation.
+- [ ] Download completion does not corrupt the next FTP directory operation.
+- [ ] Large files are written progressively to disk; no whole-file RAM buffering behavior is observed.
 
 ## Pause/resume tests
 
-- [ ] Start a sufficiently large download.
+- [ ] Start a sufficiently large FTP download.
 - [ ] Pause after meaningful progress.
 - [ ] Confirm partial local file remains.
 - [ ] Resume.
-- [ ] Confirm transfer continues rather than restarting when server supports offset resume.
-- [ ] Confirm final file size matches remote file size.
-- [ ] Compare file hash externally where practical.
-- [ ] Test against a server that rejects/does not support resume and confirm graceful behavior.
+- [ ] Confirm continuation rather than restart where server supports offset resume.
+- [ ] Confirm final size matches remote size.
+- [ ] Test a server that does not support resume and confirm graceful behavior.
 
 ## Upload tests
 
-- [ ] Ensure a local file exists in Downloads.
-- [ ] Upload it to current remote directory.
+- [ ] Use an accessible local file from the shared Downloads area or a path handed in by iPad1Files.
+- [ ] Upload to current remote FTP directory.
 - [ ] Progress and speed update.
 - [ ] Upload reaches 100%.
 - [ ] Refresh remote directory.
-- [ ] Uploaded file appears.
-- [ ] Remote size matches local size.
+- [ ] Uploaded file appears and size matches.
 
 ## Remote operation tests
 
@@ -128,51 +119,81 @@ This is a release-blocking area.
 
 - [ ] Delete a remote file.
 - [ ] Delete an empty remote folder.
-- [ ] Attempt to delete a non-empty folder and verify useful server error.
+- [ ] Non-empty folder failure is surfaced usefully.
 
 ### New folder
 
 - [ ] Create a new folder.
 - [ ] Refresh listing.
-- [ ] Enter the new folder.
+- [ ] Enter it.
 - [ ] Confirm path ends in `/`.
 
 ## Search and sorting
 
-- [ ] Search substring matches files.
-- [ ] Search substring matches folders.
-- [ ] Clearing search restores full list.
-- [ ] A→Z works.
-- [ ] Z→A works.
-- [ ] Sorting remains usable after directory change.
+- [ ] Search substring matches files in the currently loaded directory.
+- [ ] Search substring matches folders in the currently loaded directory.
+- [ ] Clearing search restores the full loaded listing.
+- [x] A→Z works — physically verified 2026-08-29.
+- [x] Z→A works — physically verified 2026-08-29.
+- [ ] Folders-first works.
+- [ ] Folders-first can be disabled.
+- [ ] Search/sort remain usable after directory change.
 
-## Local Downloads manager
+## Completed-file hand-off tests
 
-- [ ] Opens without crashing.
-- [ ] Lists local files.
-- [ ] Deletes selected local file.
-- [ ] Returning to FTP screen preserves connection state where intended.
+All hand-offs must use the same completed physical file; no copy is allowed.
 
-## Preview tests
+### Video -> iPad1Player
 
-- [ ] TXT.
-- [ ] LOG.
-- [ ] CSV.
-- [ ] JPG.
-- [ ] JPEG.
-- [ ] PNG.
-- [ ] GIF.
-- [ ] HTML.
-- [ ] PDF.
-- [ ] Unsupported file type fails gracefully or uses a generic preview path.
+For `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi` case-insensitively:
 
-## Queue tests
+- [ ] Completion UI offers `iPad1Player ile Aç`.
+- [ ] `ipad1player://open?path=<encoded-path>` receives the completed accessible local path.
+- [ ] Cold-launch Player opens the same file.
+- [ ] Warm-launch Player opens the same file.
+- [ ] Unavailable Player scheme fails gracefully and leaves the file untouched.
+- [ ] FTPDownloader performs no media decode/playback/subtitle handling.
 
-- [ ] Queue at least 3 downloads.
-- [ ] Transfers occur in order.
-- [ ] First failure does not permanently block later items unless intentionally designed that way.
-- [ ] Queue count updates.
-- [ ] Empty queue state is correct.
+### PDF -> iPad1PDFReader
+
+- [ ] `.pdf` is detected case-insensitively.
+- [ ] Completion UI offers `PDFReader ile Aç`.
+- [ ] `ipad1pdf://open?path=<encoded-path>` opens the same physical file.
+- [ ] Cold and warm launch work.
+- [ ] Unavailable PDFReader scheme fails gracefully and leaves the file untouched.
+
+### Other / Files
+
+- [ ] `Dosyalarda Göster` calls `ipad1files://show?path=<encoded-path>`.
+- [ ] iPad1Files shows the same physical file.
+- [ ] Unavailable scheme fails gracefully.
+
+## Download destination picker integration
+
+- [ ] FTPDownloader requests folder selection through iPad1Files rather than implementing a second general local browser.
+- [ ] Callback path is absolute and canonical.
+- [ ] Callback path is accepted only under `/var/mobile/Media/iPad1Files/Downloads/`.
+- [ ] Out-of-root/traversal paths are rejected.
+- [ ] Fallback to canonical Downloads does not lose FTP transfer state.
+
+## Queue / concurrency tests
+
+- [ ] Queue at least 3 FTP downloads.
+- [ ] Transfers occur in FIFO order.
+- [ ] Preferred initial iPad 1 behavior keeps one active FTP transfer at a time.
+- [ ] First failure does not permanently block later queued items.
+- [ ] Queue metadata remains bounded.
+- [ ] Queue never retains file contents.
+
+## Scope regression tests
+
+Confirm the application does **not** acquire sibling-owned subsystems:
+
+- [ ] No generic HTTP/HTTPS download workflow.
+- [ ] No browser URL downloader UI.
+- [ ] No embedded media player/codec/subtitle engine.
+- [ ] No embedded PDF renderer.
+- [ ] No general local file manager or rich preview subsystem.
 
 ## Stress / memory tests
 
@@ -181,16 +202,22 @@ On the physical iPad:
 - [ ] Navigate through at least 20 folder changes.
 - [ ] Download multiple files sequentially.
 - [ ] Upload multiple files sequentially.
-- [ ] Open/close previews repeatedly.
+- [ ] Exercise search/sort repeatedly.
+- [ ] Exercise sibling hand-offs repeatedly after completed transfers.
 - [ ] Watch for memory warnings, UI freezes, crashes or SpringBoard termination.
 
 ## Release gate
 
-Do not label a development build as stable if any of these fail:
+Do not label a development build stable if any required area fails:
 
-- build/package;
+- build/package/install;
 - app launch;
-- trailing-slash navigation;
-- basic download;
-- basic upload;
-- regression-free directory listing.
+- remote path normalization;
+- basic FTP download;
+- basic FTP upload;
+- regression-free directory listing;
+- changed transfer-manager behavior;
+- changed sibling hand-off behavior;
+- architecture scope gate.
+
+Physical-device results are authoritative.
