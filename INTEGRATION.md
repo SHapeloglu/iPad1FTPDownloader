@@ -8,7 +8,7 @@ Canonical transfer ownership:
 
 ```text
 FTP source        -> iPad1FTPDownloader
-HTTP/HTTPS source -> iPad1Downloader
+HTTP/HTTPS source -> iPad1HTTPDownloader
 local filesystem  -> iPad1Files
 video playback    -> iPad1Player
 PDF reading       -> iPad1PDFReader
@@ -16,7 +16,7 @@ terminal/shell    -> iPad1Terminal
 VNC               -> iPad1VNC
 ```
 
-A media file does not change transfer ownership. If a video is downloaded over FTP, iPad1FTPDownloader owns that transfer. If the same video is downloaded over HTTP/HTTPS, iPad1Downloader owns that transfer. iPad1Player owns only playback of an accessible local media file handed to it after transfer completion.
+A media file does not change transfer ownership. If a video is downloaded over FTP, iPad1FTPDownloader owns that transfer. If the same video is downloaded over HTTP/HTTPS, iPad1HTTPDownloader owns that transfer. iPad1Player owns only playback of an accessible local media file handed to it after transfer completion.
 
 ## Non-negotiable platform constraints
 
@@ -153,7 +153,7 @@ The following remain in iPad1FTPDownloader for FTP transfers and must not move t
 
 Large files must be streamed directly to disk. Whole-file RAM buffering is forbidden. On iPad 1, concurrency must remain deliberately low; prefer a bounded/FIFO model.
 
-## Explicit iPad1Downloader ownership
+## Explicit iPad1HTTPDownloader ownership
 
 These do **not** belong in iPad1FTPDownloader:
 
@@ -164,7 +164,7 @@ These do **not** belong in iPad1FTPDownloader:
 - HTTP/HTTPS resume semantics;
 - HTTP/HTTPS download queue/retry/failure management.
 
-Those belong to **iPad1Downloader**. iPad1Downloader may use the same completed-file routing contracts to iPad1Player, iPad1PDFReader and iPad1Files, but it owns its own HTTP/HTTPS transfer lifecycle.
+Those belong to **iPad1HTTPDownloader**. iPad1HTTPDownloader may use the same completed-file routing contracts to iPad1Player, iPad1PDFReader and iPad1Files, but it owns its own HTTP/HTTPS transfer lifecycle.
 
 ## Streaming boundary
 
@@ -220,7 +220,7 @@ Do not add:
 ## Ownership rule
 
 - FTP transfer / remote FTP operations -> **iPad1FTPDownloader**
-- HTTP/HTTPS download -> **iPad1Downloader**
+- HTTP/HTTPS download -> **iPad1HTTPDownloader**
 - Local filesystem / picker -> **iPad1Files**
 - Video decode / playback / subtitles -> **iPad1Player**
 - PDF reading / rendering -> **iPad1PDFReader**
