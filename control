@@ -1,6 +1,6 @@
 Package: com.olap.ipad1downloader
 Name: iPad1 Downloader
-Version: 1.4.1
+Version: 1.4.2
 Architecture: iphoneos-arm
 Description: Lightweight FTP, HTTP/HTTPS and Wi-Fi receive transfer client for iPad 1 / iOS 5.1.1
 Maintainer: OLAP
