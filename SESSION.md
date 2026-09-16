@@ -17,7 +17,7 @@ but the application/package is now being migrated to:
 ```text
 iPad1Downloader
 com.olap.ipad1downloader
-v1.4.0 source
+v1.4.0
 ```
 
 The separate `SHapeloglu/ipad1HTTPDownloader` repository is currently empty and is not the active implementation base.
@@ -172,37 +172,56 @@ control
 README.md
 ```
 
-## Build
+## Build status
 
-In WSL/Theos:
+**PASS — 2026-09-16**
 
-```bash
-cd ~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
-git pull origin main
-find . -type f -exec touch {} +
-make clean
-make package FINALPACKAGE=1
+WSL/Theos clean package build completed successfully for armv7 / iOS 5.1 target.
+
+Observed build sequence:
+
+```text
+Making all for application iPad1Downloader
+Compiling FTP sources
+Compiling HTTPDownloadTask / HTTPDownloadViewController
+Compiling WiFiReceiveServer / WiFiReceiveViewController
+Linking application iPad1Downloader (armv7)
+Signing iPad1Downloader
+Packaging com.olap.ipad1downloader_1.4.0_iphoneos-arm.deb
 ```
 
-The build has not yet been physically/build verified after the v1.4 source changes. Compiler output is the next authority.
+Generated package:
+
+```text
+packages/com.olap.ipad1downloader_1.4.0_iphoneos-arm.deb
+```
+
+Only warning observed:
+
+```text
+ld: warning: building for iOS 5.1.0 is deprecated
+```
+
+This warning is expected for the legacy target and did not block packaging.
+
+The package itself is build-verified but **not yet physically verified on iPad 1**.
 
 ## Immediate next action
 
 Test in this order:
 
-1. clean build v1.4;
-2. resolve any legacy SDK compile warnings/errors without modern APIs;
-3. install package on physical iPad 1;
-4. confirm FTP tab still connects/lists/navigates;
-5. test a small plain HTTP file;
-6. test an HTTPS URL compatible with the iOS 5 TLS stack;
-7. test an HTTP redirect;
-8. cancel an HTTP download and inspect `.part` behavior;
-9. start `Wi-Fi Al` and confirm the iPad local URL is shown;
-10. from Windows on the same LAN, open the URL and upload a small file;
-11. upload a larger file while watching iPad memory/stability;
-12. verify the final file exists in `iPad1Files/Downloads`;
-13. only after physical confirmation update feature status to verified.
+1. install `com.olap.ipad1downloader_1.4.0_iphoneos-arm.deb` on the physical iPad 1;
+2. launch and confirm the three tabs appear: FTP / HTTP / Wi-Fi Al;
+3. confirm FTP tab still connects/lists/navigates;
+4. test a small plain HTTP file;
+5. test an HTTPS URL compatible with the iOS 5 TLS stack;
+6. test an HTTP redirect;
+7. cancel an HTTP download and inspect `.part` behavior;
+8. start `Wi-Fi Al` and confirm the iPad local URL is shown;
+9. from Windows on the same LAN, open the URL and upload a small file;
+10. upload a larger file while watching iPad memory/stability;
+11. verify the final file exists in `iPad1Files/Downloads`;
+12. only after physical confirmation update feature status to verified.
 
 ## Cross-app completion contracts
 
