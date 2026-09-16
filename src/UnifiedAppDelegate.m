@@ -4,25 +4,49 @@
 
 @implementation UnifiedAppDelegate
 
+- (void)dismissTransferModal {
+    [self.window.rootViewController dismissModalViewControllerAnimated:YES];
+}
+
+- (UINavigationController *)navigationControllerForRoot:(UIViewController *)root title:(NSString *)title {
+    root.title=title;
+    root.navigationItem.leftBarButtonItem=[[[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemDone target:self action:@selector(dismissTransferModal)] autorelease];
+    UINavigationController *nav=[[[UINavigationController alloc] initWithRootViewController:root] autorelease];
+    nav.modalPresentationStyle=UIModalPresentationFullScreen;
+    return nav;
+}
+
+- (void)openHTTPDownloader {
+    HTTPDownloadViewController *vc=[[[HTTPDownloadViewController alloc] init] autorelease];
+    UINavigationController *nav=[self navigationControllerForRoot:vc title:@"HTTP / HTTPS"];
+    [self.window.rootViewController presentModalViewController:nav animated:YES];
+}
+
+- (void)openWiFiReceive {
+    WiFiReceiveViewController *vc=[[[WiFiReceiveViewController alloc] init] autorelease];
+    UINavigationController *nav=[self navigationControllerForRoot:vc title:@"Wi-Fi Al"];
+    [self.window.rootViewController presentModalViewController:nav animated:YES];
+}
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
     BOOL ok=[super application:application didFinishLaunchingWithOptions:launchOptions];
     if(!ok) return NO;
 
     UIViewController *ftp=self.window.rootViewController;
-    ftp.title=@"FTP";
-    ftp.tabBarItem=[[[UITabBarItem alloc] initWithTitle:@"FTP" image:nil tag:0] autorelease];
+    if(!ftp || !ftp.view) return YES;
 
-    HTTPDownloadViewController *http=[[[HTTPDownloadViewController alloc] init] autorelease];
-    UINavigationController *httpNav=[[[UINavigationController alloc] initWithRootViewController:http] autorelease];
-    httpNav.tabBarItem=[[[UITabBarItem alloc] initWithTitle:@"HTTP" image:nil tag:1] autorelease];
+    UIButton *http=[UIButton buttonWithType:UIButtonTypeRoundedRect];
+    http.frame=CGRectMake(22,14,100,32);
+    [http setTitle:@"HTTP" forState:UIControlStateNormal];
+    [http addTarget:self action:@selector(openHTTPDownloader) forControlEvents:UIControlEventTouchUpInside];
+    [ftp.view addSubview:http];
 
-    WiFiReceiveViewController *wifi=[[[WiFiReceiveViewController alloc] init] autorelease];
-    UINavigationController *wifiNav=[[[UINavigationController alloc] initWithRootViewController:wifi] autorelease];
-    wifiNav.tabBarItem=[[[UITabBarItem alloc] initWithTitle:@"Wi-Fi Al" image:nil tag:2] autorelease];
+    UIButton *wifi=[UIButton buttonWithType:UIButtonTypeRoundedRect];
+    wifi.frame=CGRectMake(646,14,100,32);
+    [wifi setTitle:@"Wi-Fi Al" forState:UIControlStateNormal];
+    [wifi addTarget:self action:@selector(openWiFiReceive) forControlEvents:UIControlEventTouchUpInside];
+    [ftp.view addSubview:wifi];
 
-    UITabBarController *tabs=[[[UITabBarController alloc] init] autorelease];
-    tabs.viewControllers=[NSArray arrayWithObjects:ftp,httpNav,wifiNav,nil];
-    self.window.rootViewController=tabs;
     return YES;
 }
 @end
