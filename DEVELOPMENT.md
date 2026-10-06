@@ -1,31 +1,31 @@
 # DEVELOPMENT.md
 
-## Development environment
+## Geliştirme ortamı
 
-Typical setup:
+Tipik kurulum:
 
-- Windows host
+- Windows ana makine
 - WSL Ubuntu
-- Theos installed inside Ubuntu
-- Jailbroken iPad 1 on the same LAN
-- iOS 5.1.1 / armv7 target
+- Ubuntu içinde kurulu Theos
+- Aynı yerel ağda jailbreak'li iPad 1
+- Hedef: iOS 5.1.1 / armv7
 
-## Project location
+## Proje konumu
 
-Current development folder pattern:
+Güncel geliştirme klasörü düzeni:
 
 ```text
 ~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
 ```
 
-Always confirm you are inside the project before running `make`:
+`make` çalıştırmadan önce her zaman proje klasöründe olduğunu doğrula:
 
 ```bash
 pwd
 ls
 ```
 
-Expected files include:
+Beklenen dosyalar:
 
 ```text
 Makefile
@@ -35,52 +35,52 @@ src/
 README.md
 ```
 
-## Clock-skew workaround
+## Saat kayması geçici çözümü
 
-Archives downloaded through Windows/WSL may contain timestamps in the future relative to WSL.
+Windows/WSL ile indirilen arşivler WSL'e göre gelecekte görünen zaman damgaları içerebilir.
 
-Before building:
+Derlemeden önce:
 
 ```bash
 find . -type f -exec touch {} +
 ```
 
-Then:
+Ardından:
 
 ```bash
 make clean
 make package FINALPACKAGE=1
 ```
 
-A warning such as `Clock skew detected` may not always stop a build, but fixing timestamps removes ambiguity.
+`Clock skew detected` gibi bir uyarı her zaman derlemeyi durdurmayabilir, ancak zaman damgalarını düzeltmek belirsizliği ortadan kaldırır.
 
-## Expected package
+## Beklenen paket
 
-For v1.3:
+v1.3 için:
 
 ```text
 packages/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb
 ```
 
-Verify:
+Kontrol:
 
 ```bash
 ls -lh packages/
 ```
 
-## Network check
+## Ağ kontrolü
 
-The iPad DHCP address may change. Check reachability before SCP:
+iPad'in DHCP adresi değişebilir. SCP'den önce erişilebilirliği kontrol et:
 
 ```bash
 ping -c 4 192.168.1.2
 ```
 
-Use the actual current address if different.
+Farklıysa güncel adresi kullan.
 
-## Copy to iPad
+## iPad'e kopyalama
 
-Old iOS OpenSSH may require RSA host-key compatibility:
+Eski iOS OpenSSH, RSA host anahtarı uyumluluğu gerektirebilir:
 
 ```bash
 scp -o HostKeyAlgorithms=+ssh-rsa \
@@ -88,31 +88,31 @@ packages/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb \
 root@192.168.1.2:/var/mobile/
 ```
 
-A post-quantum warning from modern OpenSSH is expected when connecting to this legacy SSH server. The compatibility setting should remain scoped to this device/command.
+Bu eski SSH sunucusuna bağlanırken güncel OpenSSH'nin "post-quantum" uyarısı vermesi beklenir. Uyumluluk ayarı bu cihaz/komutla sınırlı kalmalıdır.
 
-## Enter the iPad shell
+## iPad kabuğuna girme
 
 ```bash
 ssh -o HostKeyAlgorithms=+ssh-rsa root@192.168.1.2
 ```
 
-The prompt changes from something like:
+İstem (prompt) şuna benzer bir satırdan:
 
 ```text
 yeliz@DESKTOP-CSC9788:...
 ```
 
-to:
+şuna dönüşür:
 
 ```text
 apaches-iPad:~ root#
 ```
 
-Only after that change should iPad package commands be used.
+iPad paket komutlarını yalnızca bu değişiklikten sonra kullan.
 
-## Install
+## Kurulum
 
-On the iPad:
+iPad'de:
 
 ```bash
 dpkg -i /var/mobile/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb
@@ -120,40 +120,40 @@ su mobile -c "/usr/bin/uicache"
 killall SpringBoard
 ```
 
-Some legacy `uicache` versions print non-fatal process/cache messages. Verify the actual app bundle and launch behavior instead of treating every message as an installation failure.
+Bazı eski `uicache` sürümleri ölümcül olmayan süreç/önbellek mesajları basar. Her mesajı kurulum hatası saymak yerine gerçek uygulama paketini ve açılış davranışını kontrol et.
 
-## Bundle diagnostics
+## Uygulama paketi tanılama
 
 ```bash
 ls -la /Applications/iPad1FTPDownloader.app
 ```
 
-The bundle must contain at minimum:
+Paket en az şunları içermelidir:
 
 ```text
 Info.plist
 iPad1FTPDownloader
 ```
 
-If the icon is missing, refresh cache/SpringBoard. If the application opens then immediately exits, run the executable from the iPad shell to capture a runtime error:
+Simge görünmüyorsa önbelleği / SpringBoard'u yenile. Uygulama açılıp hemen kapanıyorsa, çalışma zamanı hatasını görmek için çalıştırılabilir dosyayı iPad kabuğundan başlat:
 
 ```bash
 /Applications/iPad1FTPDownloader.app/iPad1FTPDownloader
 ```
 
-## Version discipline
+## Sürüm disiplini
 
-Before a release, keep these aligned:
+Sürüm çıkmadan önce şunları uyumlu tut:
 
-- `control` package version
-- `Info.plist` bundle versions
-- README examples
-- package filename in documentation
-- CHANGELOG section
+- `control` paket sürümü
+- `Info.plist` bundle sürümleri
+- README örnekleri
+- dokümanlardaki paket dosya adı
+- CHANGELOG bölümü
 
-## Git workflow
+## Git akışı
 
-Recommended:
+Önerilen:
 
 ```bash
 git status
@@ -162,22 +162,22 @@ git commit -m "feat: ..."
 git push origin main
 ```
 
-Before pushing, inspect for accidental credentials:
+Push'tan önce yanlışlıkla eklenmiş kimlik bilgisi olup olmadığına bak:
 
 ```bash
 git diff --cached
 ```
 
-Do not commit FTP passwords, private server credentials, SSH private keys, or sensitive production configuration.
+FTP şifrelerini, özel sunucu kimlik bilgilerini, SSH özel anahtarlarını veya hassas üretim yapılandırmalarını commit etme.
 
-## Debugging principle
+## Hata ayıklama ilkesi
 
-For this project, reproduce on the physical iPad whenever behavior could differ due to:
+Bu projede, davranışın şu nedenlerle farklılaşabileceği her durumda fiziksel iPad'de yeniden üret:
 
 - iOS 5 CFNetwork;
-- legacy UIKit;
-- filesystem permissions;
-- SpringBoard cache;
-- armv7 linking;
-- old OpenSSH;
-- low-memory pressure.
+- eski UIKit;
+- dosya sistemi izinleri;
+- SpringBoard önbelleği;
+- armv7 bağlama (linking);
+- eski OpenSSH;
+- düşük bellek baskısı.

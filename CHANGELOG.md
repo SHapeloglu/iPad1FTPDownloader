@@ -1,76 +1,76 @@
 # CHANGELOG.md
 
-All notable project changes should be recorded here.
+Projedeki önemli değişiklikler burada kaydedilir.
 
-## [Unreleased] — v1.3 development
+## [Yayımlanmadı] — v1.3 geliştirme
 
-### Added / prepared
+### Eklendi / hazırlandı
 
-- Central directory path normalization design.
-- Local Downloads browser.
-- Remote search.
-- A→Z / Z→A sorting.
-- Basic text/image/HTML/PDF preview infrastructure.
-- Download pause/resume infrastructure.
-- FTP transfer offset/resume support where server and CFNetwork allow it.
-- Transfer queue infrastructure.
-- Secure-transport abstraction/integration points for future SFTP/FTPS work.
+- Merkezi dizin yolu normalleştirme tasarımı.
+- Yerel Downloads gezgini.
+- Uzak arama.
+- A→Z / Z→A sıralama.
+- Temel metin/görsel/HTML/PDF önizleme altyapısı.
+- İndirme duraklat/devam altyapısı.
+- Sunucu ve CFNetwork izin verdiği ölçüde FTP transfer ofseti / devam desteği.
+- Transfer kuyruğu altyapısı.
+- İleride SFTP/FTPS çalışması için güvenli taşıma soyutlaması / entegrasyon noktaları.
 
-### Important
+### Önemli
 
-v1.3 features are development work until the exact source successfully builds and passes physical iPad 1 testing.
+v1.3 özellikleri, aynı kaynak kod başarıyla derlenip fiziksel iPad 1 testlerinden geçene kadar geliştirme aşamasında sayılır.
 
 ## [1.2.0]
 
-### Added
+### Eklendi
 
-- Saved FTP server support.
-- Upload support.
-- Remote rename infrastructure.
-- Remote delete infrastructure.
-- New-folder infrastructure.
-- Transfer progress UI.
-- Percentage display.
-- Transfer speed display.
-- Human-readable remote file-size display.
+- Kayıtlı FTP sunucu desteği.
+- Yükleme desteği.
+- Uzak yeniden adlandırma altyapısı.
+- Uzak silme altyapısı.
+- Yeni klasör altyapısı.
+- Transfer ilerleme arayüzü.
+- Yüzde göstergesi.
+- Transfer hızı göstergesi.
+- Okunabilir uzak dosya boyutu gösterimi.
 
-### Verified observations
+### Doğrulanan gözlemler
 
-- v1.2 built and installed on iPad 1.
-- Upload reached 100% during device testing.
-- Transfer speed/progress was displayed.
+- v1.2 derlendi ve iPad 1'e kuruldu.
+- Cihaz testinde yükleme %100'e ulaştı.
+- Transfer hızı / ilerleme görüntülendi.
 
-### Known issue discovered
+### Bulunan bilinen sorun
 
-Directory navigation on legacy iOS 5 CFNetwork may fail if a directory path does not end with `/`.
+Eski iOS 5 CFNetwork'te dizin yolu `/` ile bitmezse dizin gezinme başarısız olabiliyor.
 
-An initial attempt to append `/` only while building the network URL did not fully solve the issue because application navigation state still stored non-normalized paths.
+`/` karakterini yalnızca ağ URL'si oluşturulurken eklemek sorunu tamamen çözmedi, çünkü uygulamanın gezinme durumu hâlâ normalleştirilmemiş yolları saklıyordu.
 
 ## [1.1.0]
 
-### Added
+### Eklendi
 
-- FTP directory listing.
-- Folder navigation.
-- Parent-folder navigation.
-- Tap-to-download file browser.
+- FTP dizin listeleme.
+- Klasör gezinme.
+- Üst klasöre gitme.
+- Dokunarak indirilen dosya gezgini.
 
-### Verified
+### Doğrulandı
 
-Directory listing and file download worked on the physical iPad 1.
+Dizin listeleme ve dosya indirme fiziksel iPad 1'de çalıştı.
 
 ## [1.0.0]
 
-### Added
+### Eklendi
 
-- Initial FTP downloader.
-- Host/IP field.
-- Port field.
-- Username/password fields.
-- Remote path.
-- Local filename.
-- Streaming download to `/var/mobile/Media/iPad1FTPDownloads/`.
+- İlk FTP indirici.
+- Host/IP alanı.
+- Port alanı.
+- Kullanıcı adı / şifre alanları.
+- Uzak yol.
+- Yerel dosya adı.
+- `/var/mobile/Media/iPad1FTPDownloads/` klasörüne akışla indirme.
 
-### Fixed during bring-up
+### Devreye alma sırasında düzeltildi
 
-- Added `Info.plist` to the application bundle after the first package installed only the executable and SpringBoard could not properly recognize the application.
+- İlk paket yalnızca çalıştırılabilir dosyayı kurduğu ve SpringBoard uygulamayı düzgün tanıyamadığı için uygulama paketine `Info.plist` eklendi.

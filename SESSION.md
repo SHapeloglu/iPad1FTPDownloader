@@ -1,18 +1,18 @@
 # SESSION.md
 
-## Latest hand-off
+## Son devir
 
-Date: 2026-09-16
+Tarih: 2026-09-16
 
-## Product identity
+## Ürün kimliği
 
-The active source base is still hosted at:
+Aktif kaynak kod hâlâ şurada:
 
 ```text
 https://github.com/SHapeloglu/iPad1FTPDownloader
 ```
 
-but the application/package is now being migrated to:
+ancak uygulama/paket şuna taşınıyor:
 
 ```text
 iPad1Downloader
@@ -20,9 +20,9 @@ com.olap.ipad1downloader
 v1.4.0
 ```
 
-The separate `SHapeloglu/ipad1HTTPDownloader` repository is currently empty and is not the active implementation base.
+Ayrı `SHapeloglu/ipad1HTTPDownloader` reposu şu an boş ve aktif geliştirme tabanı değil.
 
-## Platform constraints — do not change
+## Platform kısıtları — değiştirme
 
 - iPad 1
 - Apple A4
@@ -32,13 +32,13 @@ The separate `SHapeloglu/ipad1HTTPDownloader` repository is currently empty and 
 - Objective-C
 - non-ARC / MRC
 - Theos
-- legacy iPhoneOS 6.1 SDK
-- stream-to-disk for large transfers
-- physical-device behavior is authoritative
+- eski iPhoneOS 6.1 SDK
+- büyük transferler için doğrudan diske akıtma
+- belirleyici olan fiziksel cihaz davranışı
 
-## Unified transport architecture
+## Birleşik taşıma mimarisi
 
-`iPad1Downloader` owns network transfer only:
+`iPad1Downloader` yalnızca ağ transferinden sorumludur:
 
 ```text
 FTP        -> existing FTP engine
@@ -46,108 +46,108 @@ HTTP/HTTPS -> HTTPDownloadTask
 Wi-Fi Al   -> WiFiReceiveServer
 ```
 
-The unified UI uses three tabs:
+Birleşik arayüz üç sekme kullanır:
 
 ```text
 FTP | HTTP | Wi-Fi Al
 ```
 
-FTP protocol code, HTTP protocol code and Wi-Fi receive code remain separate engines.
+FTP protokol kodu, HTTP protokol kodu ve Wi-Fi alma kodu ayrı motorlar olarak kalır.
 
-## iPad1Files ownership boundary
+## iPad1Files sahiplik sınırı
 
-Do NOT implement these inside Downloader:
+Bunları Downloader içinde YAZMA:
 
-- local filesystem browser;
-- destination folder browser/picker;
-- local copy/move/rename/delete;
-- ZIP/archive;
-- local search/favorites;
-- downloaded-file organization;
-- general Open With / file manager UI.
+- yerel dosya sistemi gezgini;
+- hedef klasör gezgini / seçici;
+- yerel kopyala / taşı / yeniden adlandır / sil;
+- ZIP / arşiv;
+- yerel arama / favoriler;
+- indirilen dosyaların düzenlenmesi;
+- genel "Birlikte Aç" / dosya yöneticisi arayüzü.
 
-Those belong to `iPad1Files`.
+Bunlar `iPad1Files`'a aittir.
 
-Canonical destination while the external picker is not yet physically verified:
+Harici seçici henüz fiziksel olarak doğrulanmadığı sürece standart hedef:
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-One transfer = one physical file.
+Bir transfer = bir fiziksel dosya.
 
-## Existing FTP historical verification
+## Mevcut FTP için geçmiş doğrulamalar
 
-Previously physically verified on iPad 1:
+Daha önce fiziksel iPad 1'de doğrulananlar:
 
-- FTP connection/browse/download basics;
-- child/nested directory navigation;
-- parent navigation;
-- canonical download root behavior tracked in prior tests;
-- A->Z remote sorting;
-- Z->A remote sorting;
-- an earlier upload/progress flow reached 100%.
+- FTP bağlantısı / gezinme / indirme temelleri;
+- alt / iç içe dizin gezinme;
+- üst dizine çıkma;
+- önceki testlerde izlenen standart indirme kökü davranışı;
+- A->Z uzak sıralama;
+- Z->A uzak sıralama;
+- daha önceki bir yükleme/ilerleme akışı %100'e ulaştı.
 
-These are historical FTP-core results. They do not automatically verify the new unified v1.4 package.
+Bunlar FTP çekirdeğine ait geçmiş sonuçlardır. Yeni birleşik v1.4 paketini otomatik olarak doğrulamazlar.
 
-## v1.4 source implemented — physical test pending
+## v1.4 kaynakta yazıldı — fiziksel test bekliyor
 
 ### HTTP/HTTPS
 
-Implemented in source:
+Kaynakta yazıldı:
 
 - `HTTPDownloadTask`;
-- HTTP and HTTPS URL validation;
-- `NSURLConnection` GET transport;
-- normal redirect handling through `NSURLConnection`;
-- non-2xx HTTP rejection;
-- `NSURLResponse suggestedFilename` with URL fallback;
-- safe filename normalization;
-- unique-name collision handling;
-- `<filename>.part` temporary file;
-- chunk-by-chunk disk write;
-- progress;
-- speed;
-- cancel;
-- completion hand-off to PDFReader / Player / Files.
+- HTTP ve HTTPS URL doğrulaması;
+- `NSURLConnection` GET taşıması;
+- `NSURLConnection` üzerinden normal yönlendirme işleme;
+- 2xx dışı HTTP yanıtlarının reddi;
+- URL'ye geri dönüşlü `NSURLResponse suggestedFilename`;
+- güvenli dosya adı normalleştirmesi;
+- benzersiz ad ile çakışma yönetimi;
+- `<filename>.part` geçici dosyası;
+- parça parça diske yazma;
+- ilerleme;
+- hız;
+- iptal;
+- tamamlanınca PDFReader / Player / Files'a devir.
 
-Not yet implemented/verified:
+Henüz yapılmadı / doğrulanmadı:
 
-- HTTP Range resume;
-- 206 validation;
-- retry policy;
-- network-loss automatic recovery;
-- bounded unified queue;
-- ETA smoothing.
+- HTTP Range ile devam ettirme;
+- 206 doğrulaması;
+- yeniden deneme politikası;
+- ağ kopmasından otomatik kurtarma;
+- sınırlı birleşik kuyruk;
+- kalan süre tahmininin yumuşatılması.
 
-### Windows -> iPad Wi-Fi Receive
+### Windows -> iPad Wi-Fi Alma
 
-Implemented in source:
+Kaynakta yazıldı:
 
-- lightweight local TCP/HTTP receive server;
+- hafif yerel TCP/HTTP alma sunucusu;
 - port 8080;
-- listens only while the user enables the receiver;
-- local Wi-Fi IP discovery via `en0`;
-- six-digit per-start session token;
-- tiny browser upload page;
-- browser sends raw file body with HTTP PUT;
-- no multipart parser;
-- `Content-Length` required;
-- filename sanitization and collision-safe naming;
-- `.part` streamed write;
-- final rename on complete receipt;
-- one connection/transfer processed at a time;
-- partial file retained when transfer is interrupted.
+- yalnızca kullanıcı alıcıyı açtığında dinler;
+- `en0` üzerinden yerel Wi-Fi IP tespiti;
+- her başlatmada altı haneli oturum kodu;
+- küçük tarayıcı yükleme sayfası;
+- tarayıcı dosya gövdesini ham HTTP PUT ile gönderir;
+- multipart ayrıştırıcı yok;
+- `Content-Length` zorunlu;
+- dosya adı temizleme ve çakışmaya karşı güvenli adlandırma;
+- `.part` dosyasına akışla yazma;
+- alım tamamlanınca son ada çevirme;
+- aynı anda tek bağlantı/transfer işlenir;
+- transfer kesilirse kısmi dosya korunur.
 
-Files are received only into:
+Dosyalar yalnızca buraya alınır:
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-Local browsing after transfer remains an `iPad1Files` responsibility.
+Transfer sonrası yerel gezinme `iPad1Files`'ın sorumluluğunda kalır.
 
-## Source files added for v1.4
+## v1.4 için eklenen kaynak dosyalar
 
 ```text
 src/UnifiedAppDelegate.h
@@ -162,7 +162,7 @@ src/WiFiReceiveViewController.h
 src/WiFiReceiveViewController.m
 ```
 
-Changed:
+Değişenler:
 
 ```text
 src/main.m
@@ -172,13 +172,13 @@ control
 README.md
 ```
 
-## Build status
+## Derleme durumu
 
-**PASS — 2026-09-16**
+**BAŞARILI — 2026-09-16**
 
-WSL/Theos clean package build completed successfully for armv7 / iOS 5.1 target.
+armv7 / iOS 5.1 hedefi için WSL/Theos temiz paket derlemesi başarıyla tamamlandı.
 
-Observed build sequence:
+Gözlenen derleme sırası:
 
 ```text
 Making all for application iPad1Downloader
@@ -190,40 +190,40 @@ Signing iPad1Downloader
 Packaging com.olap.ipad1downloader_1.4.0_iphoneos-arm.deb
 ```
 
-Generated package:
+Üretilen paket:
 
 ```text
 packages/com.olap.ipad1downloader_1.4.0_iphoneos-arm.deb
 ```
 
-Only warning observed:
+Görülen tek uyarı:
 
 ```text
 ld: warning: building for iOS 5.1.0 is deprecated
 ```
 
-This warning is expected for the legacy target and did not block packaging.
+Bu uyarı eski hedef için beklenen bir durumdur ve paketlemeyi engellemedi.
 
-The package itself is build-verified but **not yet physically verified on iPad 1**.
+Paket derleme açısından doğrulandı ancak **henüz fiziksel iPad 1'de doğrulanmadı**.
 
-## Immediate next action
+## Hemen yapılacak sonraki adım
 
-Test in this order:
+Şu sırayla test et:
 
-1. install `com.olap.ipad1downloader_1.4.0_iphoneos-arm.deb` on the physical iPad 1;
-2. launch and confirm the three tabs appear: FTP / HTTP / Wi-Fi Al;
-3. confirm FTP tab still connects/lists/navigates;
-4. test a small plain HTTP file;
-5. test an HTTPS URL compatible with the iOS 5 TLS stack;
-6. test an HTTP redirect;
-7. cancel an HTTP download and inspect `.part` behavior;
-8. start `Wi-Fi Al` and confirm the iPad local URL is shown;
-9. from Windows on the same LAN, open the URL and upload a small file;
-10. upload a larger file while watching iPad memory/stability;
-11. verify the final file exists in `iPad1Files/Downloads`;
-12. only after physical confirmation update feature status to verified.
+1. `com.olap.ipad1downloader_1.4.0_iphoneos-arm.deb` paketini fiziksel iPad 1'e kur;
+2. uygulamayı aç ve üç sekmenin göründüğünü doğrula: FTP / HTTP / Wi-Fi Al;
+3. FTP sekmesinin hâlâ bağlandığını / listelediğini / gezindiğini doğrula;
+4. küçük, düz bir HTTP dosyası dene;
+5. iOS 5 TLS yığınıyla uyumlu bir HTTPS adresi dene;
+6. bir HTTP yönlendirmesi dene;
+7. bir HTTP indirmesini iptal et ve `.part` davranışını incele;
+8. `Wi-Fi Al`'ı başlat ve iPad'in yerel adresinin gösterildiğini doğrula;
+9. aynı ağdaki Windows'tan adresi açıp küçük bir dosya yükle;
+10. iPad belleğini/kararlılığını izlerken daha büyük bir dosya yükle;
+11. son dosyanın `iPad1Files/Downloads` içinde olduğunu doğrula;
+12. özellik durumunu ancak fiziksel doğrulamadan sonra "doğrulandı" yap.
 
-## Cross-app completion contracts
+## Uygulamalar arası tamamlama sözleşmeleri
 
 ```text
 PDF   -> ipad1pdf://open?path=<encoded-absolute-path>
@@ -231,26 +231,26 @@ video -> ipad1player://open?path=<encoded-absolute-path>
 other -> ipad1files://show?path=<encoded-absolute-path>
 ```
 
-Never duplicate a file solely for hand-off.
+Bir dosyayı asla yalnızca devir için çoğaltma.
 
-## Memory policy
+## Bellek politikası
 
-Allowed:
+İzin verilenler:
 
-- small network buffers;
-- direct stream-to-disk;
-- `.part` files;
-- small bounded metadata;
-- one active large transfer preferred.
+- küçük ağ tamponları;
+- doğrudan diske akıtma;
+- `.part` dosyaları;
+- küçük, sınırlı metadata;
+- tercihen tek aktif büyük transfer.
 
-Forbidden inside Downloader:
+Downloader içinde yasak olanlar:
 
-- whole-file RAM buffering;
-- embedded local file manager;
-- embedded PDF engine;
-- embedded media player/codec stack;
-- OCR/AI/ML;
-- large caches;
-- uncontrolled parallel transfers.
+- dosyanın tamamını RAM'de tutmak;
+- gömülü yerel dosya yöneticisi;
+- gömülü PDF motoru;
+- gömülü medya oynatıcı / codec yığını;
+- OCR / AI / ML;
+- büyük önbellekler;
+- kontrolsüz paralel transferler.
 
-`INTEGRATION.md` remains authoritative for suite responsibility boundaries.
+Uygulama ailesi sorumluluk sınırlarında `INTEGRATION.md` belirleyici olmaya devam eder.

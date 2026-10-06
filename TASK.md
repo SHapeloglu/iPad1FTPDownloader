@@ -1,163 +1,163 @@
 # TASK.md
 
-## Current priority
+## Güncel öncelik
 
-Finish **v1.3 integration/stabilization** first. Every new feature must pass the sibling-app ownership gate before implementation.
+Önce **v1.3 entegrasyon / kararlılık** işini bitir. Her yeni özellik, yazılmadan önce kardeş uygulama sahiplik kapısından geçmelidir.
 
-Ownership:
+Sahiplik:
 
-- FTP transfer / remote FTP operations -> iPad1FTPDownloader
-- HTTP/HTTPS downloads -> iPad1Downloader
-- local filesystem/pickers -> iPad1Files
-- video playback/codecs/subtitles -> iPad1Player
+- FTP transferi / uzak FTP işlemleri -> iPad1FTPDownloader
+- HTTP/HTTPS indirmeleri -> iPad1Downloader
+- yerel dosya sistemi / seçiciler -> iPad1Files
+- video oynatma / codec / altyazı -> iPad1Player
 - PDF -> iPad1PDFReader
-- terminal/shell -> iPad1Terminal
-- VNC/remote desktop -> iPad1VNC
+- terminal / kabuk -> iPad1Terminal
+- VNC / uzak masaüstü -> iPad1VNC
 
-See `SIBLING_APP_INSTRUCTIONS.md` for delegated work.
+Devredilen işler için bkz. `SIBLING_APP_INSTRUCTIONS.md`.
 
-## P0 — v1.3 integration-critical
+## P0 — v1.3 entegrasyon için kritik
 
-- [x] Confirm canonical local download root is `/var/mobile/Media/iPad1Files/Downloads/` for new FTP downloads.
-- [x] Create the canonical Downloads directory automatically when missing.
-- [x] Remove new-download use of `/var/mobile/Media/iPad1FTPDownloads/`.
-- [x] Verify a completed FTP file exists in exactly one new physical location.
-- [x] Do not copy completed downloads after transfer merely for sibling integration.
-- [x] Centralize remote directory normalization in one helper.
-- [x] Enforce leading `/` and trailing `/` on remote directory navigation paths.
-- [x] Verify manual path entry preserves the invariant.
-- [x] Verify child-folder navigation preserves the invariant.
-- [x] Verify parent navigation preserves the invariant.
-- [x] Verify refresh preserves the invariant independently.
-- [x] Verify root remains exactly `/` during parent navigation.
-- [x] Build and install v1.3 on the physical iPad 1.
+- [x] Yeni FTP indirmeleri için standart yerel indirme kökünün `/var/mobile/Media/iPad1Files/Downloads/` olduğunu doğrula.
+- [x] Standart Downloads klasörü yoksa otomatik oluştur.
+- [x] Yeni indirmelerde `/var/mobile/Media/iPad1FTPDownloads/` kullanımını kaldır.
+- [x] Tamamlanan bir FTP dosyasının yeni düzende tam olarak tek bir fiziksel konumda olduğunu doğrula.
+- [x] Tamamlanan indirmeleri yalnızca kardeş entegrasyonu için transfer sonrası kopyalama.
+- [x] Uzak dizin normalleştirmesini tek bir yardımcıda topla.
+- [x] Uzak dizin gezinme yollarında baştaki ve sondaki `/` kuralını zorunlu kıl.
+- [x] Elle yol girişinin kuralı koruduğunu doğrula.
+- [x] Alt klasöre gitmenin kuralı koruduğunu doğrula.
+- [x] Üst klasöre çıkmanın kuralı koruduğunu doğrula.
+- [x] Yenilemenin kuralı bağımsız olarak koruduğunu doğrula.
+- [x] Üst klasöre çıkarken kökün tam olarak `/` kaldığını doğrula.
+- [x] v1.3'ü derleyip fiziksel iPad 1'e kur.
 
-## P1 — v1.3 regression and hand-off
+## P1 — v1.3 regresyon ve devir
 
-- [x] Download directly into `/var/mobile/Media/iPad1Files/Downloads/`.
-- [ ] Upload remains stream-based and functional.
-- [ ] Transfer percentage works.
-- [ ] Transfer speed works.
-- [ ] Saved servers still work.
-- [ ] Remote rename works.
-- [ ] Remote delete works.
-- [ ] MKD works.
-- [ ] RMD works.
-- [ ] Detect completed `.pdf` extension case-insensitively.
-- [ ] Add `PDFReader ile Aç` action.
-- [ ] Percent-encode the canonical absolute path.
-- [ ] Open `ipad1pdf://open?path=<encoded-path>` without copying the file.
-- [ ] Detect completed `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi` case-insensitively.
-- [ ] Add `iPad1Player ile Aç` action for completed video files.
-- [ ] Open `ipad1player://open?path=<encoded-path>` only after the local file is complete and accessible.
-- [ ] Do not add video decode/playback/subtitle logic to FTPDownloader.
-- [ ] Add `Dosyalarda Göster` using `ipad1files://show?path=<encoded-path>`.
-- [ ] Handle unavailable sibling URL schemes gracefully without touching the completed file.
-- [ ] Keep local UI limited to FTP transfer status and hand-off.
+- [x] Doğrudan `/var/mobile/Media/iPad1Files/Downloads/` içine indir.
+- [ ] Yükleme akış tabanlı ve çalışır durumda kalıyor.
+- [ ] Transfer yüzdesi çalışıyor.
+- [ ] Transfer hızı çalışıyor.
+- [ ] Kayıtlı sunucular hâlâ çalışıyor.
+- [ ] Uzak yeniden adlandırma çalışıyor.
+- [ ] Uzak silme çalışıyor.
+- [ ] MKD çalışıyor.
+- [ ] RMD çalışıyor.
+- [ ] Tamamlanan `.pdf` uzantısını büyük/küçük harf duyarsız algıla.
+- [ ] `PDFReader ile Aç` eylemini ekle.
+- [ ] Standart mutlak yolu yüzde-kodla (percent-encode).
+- [ ] Dosyayı kopyalamadan `ipad1pdf://open?path=<encoded-path>` aç.
+- [ ] Tamamlanan `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi` dosyalarını büyük/küçük harf duyarsız algıla.
+- [ ] Tamamlanan video dosyaları için `iPad1Player ile Aç` eylemini ekle.
+- [ ] `ipad1player://open?path=<encoded-path>` yalnızca yerel dosya tamamlanmış ve erişilebilir olduğunda açılsın.
+- [ ] FTPDownloader'a video çözme / oynatma / altyazı mantığı ekleme.
+- [ ] `ipad1files://show?path=<encoded-path>` ile `Dosyalarda Göster` ekle.
+- [ ] Kardeş uygulamanın URL scheme'i yoksa tamamlanan dosyaya dokunmadan hatayı nazikçe göster.
+- [ ] Yerel arayüzü FTP transfer durumu ve devirle sınırlı tut.
 
-## P2 — download destination preference + iPad1Files picker
+## P2 — indirme hedefi tercihi + iPad1Files seçici
 
-- [ ] Add preference modes: `Son kullanılan klasör`, `Her indirmede sor`, `Her zaman Downloads'a indir`.
-- [ ] Default to a simple/low-friction mode; final default should be decided after on-device UX testing.
-- [ ] Persist only lightweight path/preference metadata.
-- [ ] Add `Başka klasör seç` hand-off to iPad1Files.
-- [ ] Call `ipad1files://pickFolder?root=<encoded-root>&callback=<encoded-callback>`.
-- [ ] Register/handle callback `ipad1ftp://folderSelected?path=<encoded-path>`.
-- [ ] Validate callback path remains under `/var/mobile/Media/iPad1Files/Downloads/`.
-- [ ] Reject path traversal/out-of-root destinations.
-- [ ] Remember last selected folder.
-- [ ] If iPad1Files scheme is unavailable, fall back to canonical Downloads without losing FTP transfer state.
+- [ ] Tercih modlarını ekle: `Son kullanılan klasör`, `Her indirmede sor`, `Her zaman Downloads'a indir`.
+- [ ] Varsayılan olarak basit / az zahmetli bir mod kullan; nihai varsayılan cihazda kullanıcı deneyimi testinden sonra seçilsin.
+- [ ] Yalnızca hafif yol/tercih metadata'sı sakla.
+- [ ] iPad1Files'a `Başka klasör seç` devrini ekle.
+- [ ] `ipad1files://pickFolder?root=<encoded-root>&callback=<encoded-callback>` çağır.
+- [ ] `ipad1ftp://folderSelected?path=<encoded-path>` geri çağrısını kaydet/işle.
+- [ ] Geri çağrı yolunun `/var/mobile/Media/iPad1Files/Downloads/` altında kaldığını doğrula.
+- [ ] Yol geçişi (path traversal) / kök dışı hedefleri reddet.
+- [ ] Son seçilen klasörü hatırla.
+- [ ] iPad1Files scheme'i yoksa FTP transfer durumunu kaybetmeden standart Downloads'a geri dön.
 
-## P3 — completed-file preferences
+## P3 — tamamlanan dosya tercihleri
 
-- [ ] PDF modes: `Her seferinde sor`, `Otomatik PDFReader ile aç`, `Sadece indir`.
-- [ ] Recommended PDF default: `Her seferinde sor`.
-- [ ] If `ipad1pdf://` is unavailable, leave the file intact and show useful status.
-- [ ] Verify no duplicate PDF copy is created.
-- [ ] Consider a similarly lightweight video completion preference only after physical UX testing; do not add playback settings to FTPDownloader.
+- [ ] PDF modları: `Her seferinde sor`, `Otomatik PDFReader ile aç`, `Sadece indir`.
+- [ ] Önerilen PDF varsayılanı: `Her seferinde sor`.
+- [ ] `ipad1pdf://` yoksa dosyayı olduğu gibi bırak ve işe yarar bir durum mesajı göster.
+- [ ] Yinelenen PDF kopyası oluşmadığını doğrula.
+- [ ] Benzer hafif bir video tamamlama tercihini ancak fiziksel kullanıcı deneyimi testinden sonra düşün; FTPDownloader'a oynatma ayarları ekleme.
 
-## P4 — v1.4 FTP transfer manager
+## P4 — v1.4 FTP transfer yöneticisi
 
-- [ ] Pause FTP download.
-- [ ] Resume with FTP REST/offset where supported.
-- [ ] Detect unsupported resume behavior cleanly.
-- [ ] Cancel transfer.
-- [ ] FIFO queue.
-- [ ] Keep active concurrency deliberately low on iPad 1; preferred starting point is one active FTP transfer.
-- [ ] Limit queue length or otherwise keep metadata bounded.
-- [ ] Retry failed FTP transfer.
-- [ ] Connection-loss recovery.
-- [ ] ETA calculation with low CPU overhead.
-- [ ] Overwrite / Resume / Rename collision choice.
-- [ ] Small metadata-only transfer history.
-- [ ] Test at least 3 sequential queued transfers.
-- [ ] Verify no whole-file buffering.
+- [ ] FTP indirmesini duraklat.
+- [ ] Desteklenen yerde FTP REST/ofset ile devam ettir.
+- [ ] Desteklenmeyen devam davranışını temiz şekilde algıla.
+- [ ] Transferi iptal et.
+- [ ] FIFO kuyruk.
+- [ ] iPad 1'de aktif eşzamanlılığı bilinçli olarak düşük tut; tercih edilen başlangıç tek aktif FTP transferi.
+- [ ] Kuyruk uzunluğunu sınırla veya metadata'yı başka bir yolla sınırlı tut.
+- [ ] Başarısız FTP transferini yeniden dene.
+- [ ] Bağlantı kopmasından kurtarma.
+- [ ] Düşük CPU yüküyle kalan süre hesabı.
+- [ ] Üzerine Yaz / Devam Et / Yeniden Adlandır çakışma seçimi.
+- [ ] Küçük, yalnız metadata tutan transfer geçmişi.
+- [ ] Kuyruğa alınmış en az 3 ardışık transferi test et.
+- [ ] Dosyanın tamamının tamponlanmadığını doğrula.
 
-## P5 — FTP remote UX
+## P5 — uzak FTP kullanıcı deneyimi
 
-- [ ] Improve Saved Servers editor.
-- [ ] Edit saved profile.
-- [ ] Delete saved profile.
-- [ ] **Source implemented, physical test pending:** remote filename/folder filtering over the already-loaded directory listing; no recursive traversal.
-- [x] **Physically verified on iPad 1 (2026-08-29):** user-selectable A→Z sorting.
-- [x] **Physically verified on iPad 1 (2026-08-29):** user-selectable Z→A sorting.
-- [ ] **Source implemented, physical test pending:** folders-first toggle.
-- [x] Human-readable remote file size already present in row UI; preserve it.
-- [ ] Remote date/time metadata where server listing format permits reliable parsing.
-- [ ] Upload target selection remains remote-FTP-path responsibility.
-- [ ] Keep recursive remote search bounded/cancellable if ever implemented.
+- [ ] Kayıtlı Sunucular düzenleyicisini geliştir.
+- [ ] Kayıtlı profili düzenle.
+- [ ] Kayıtlı profili sil.
+- [ ] **Kaynakta yazıldı, fiziksel test bekliyor:** zaten yüklenmiş dizin listesinde uzak dosya/klasör adı filtreleme; özyinelemeli tarama yok.
+- [x] **iPad 1'de fiziksel olarak doğrulandı (2026-08-29):** kullanıcının seçebildiği A→Z sıralama.
+- [x] **iPad 1'de fiziksel olarak doğrulandı (2026-08-29):** kullanıcının seçebildiği Z→A sıralama.
+- [ ] **Kaynakta yazıldı, fiziksel test bekliyor:** önce klasörler seçeneği.
+- [x] Okunabilir uzak dosya boyutu satır arayüzünde zaten var; koru.
+- [ ] Sunucu liste formatı güvenilir ayrıştırmaya izin veriyorsa uzak tarih/saat metadata'sı.
+- [ ] Yükleme hedefi seçimi uzak FTP yolunun sorumluluğunda kalır.
+- [ ] Özyinelemeli uzak arama yazılırsa sınırlı ve iptal edilebilir olsun.
 
-## P6 — app-family integration polish
+## P6 — uygulama ailesi entegrasyon iyileştirmeleri
 
-- [ ] Verify folder picker round-trip with iPad1Files on physical iPad 1.
-- [ ] Verify PDF hand-off with iPad1PDFReader installed.
-- [ ] Verify video hand-off with iPad1Player installed.
-- [ ] Verify `Dosyalarda Göster` when iPad1Files scheme is available.
-- [ ] Confirm all sibling-app actions use the same physical file.
-- [ ] Replace temporary FTPDownloader local upload chooser with physically verified iPad1Files `pickFile` hand-off.
-- [ ] Register/handle `ipad1ftp://fileSelected?path=...` only when the iPad1Files contract is implemented and verified.
-- [ ] Do not introduce an Open With registry into FTPDownloader.
+- [ ] iPad1Files ile klasör seçici gidiş-dönüşünü fiziksel iPad 1'de doğrula.
+- [ ] iPad1PDFReader kuruluyken PDF devrini doğrula.
+- [ ] iPad1Player kuruluyken video devrini doğrula.
+- [ ] iPad1Files scheme'i varken `Dosyalarda Göster`'i doğrula.
+- [ ] Tüm kardeş uygulama eylemlerinin aynı fiziksel dosyayı kullandığını doğrula.
+- [ ] Geçici FTPDownloader yerel yükleme seçicisini fiziksel olarak doğrulanmış iPad1Files `pickFile` devriyle değiştir.
+- [ ] `ipad1ftp://fileSelected?path=...` geri çağrısını yalnızca iPad1Files sözleşmesi yazılıp doğrulandığında kaydet/işle.
+- [ ] FTPDownloader'a "Birlikte Aç" kaydı ekleme.
 
-## P7 — credential hardening
+## P7 — kimlik bilgisi sıkılaştırması
 
-- [ ] Move saved passwords to an iOS-5-compatible Keychain implementation.
-- [ ] Add “do not save password” option.
-- [ ] Polish Anonymous FTP support.
-- [ ] Preserve existing saved-profile compatibility where practical.
+- [ ] Kayıtlı şifreleri iOS 5 uyumlu bir Keychain uygulamasına taşı.
+- [ ] "Şifreyi kaydetme" seçeneği ekle.
+- [ ] Anonim FTP desteğini iyileştir.
+- [ ] Mümkün olduğunca mevcut kayıtlı profil uyumluluğunu koru.
 
-## Delegated to iPad1Downloader — do not implement here
+## iPad1Downloader'a devredildi — burada yazma
 
-- [ ] Generic HTTP downloads.
-- [ ] Generic HTTPS downloads.
-- [ ] Browser/web URL download workflows.
-- [ ] HTTP redirects/cookies/headers.
-- [ ] HTTP/HTTPS resume semantics.
-- [ ] HTTP/HTTPS queue/retry/failure handling.
-- [ ] HTTP/HTTPS media download completion routing may mirror the same Player/PDFReader/Files hand-off contracts, but implementation belongs to iPad1Downloader.
+- [ ] Genel HTTP indirmeleri.
+- [ ] Genel HTTPS indirmeleri.
+- [ ] Tarayıcı / web URL'si indirme akışları.
+- [ ] HTTP yönlendirmeleri / çerezleri / başlıkları.
+- [ ] HTTP/HTTPS devam ettirme.
+- [ ] HTTP/HTTPS kuyruk / yeniden deneme / hata yönetimi.
+- [ ] HTTP/HTTPS medya indirmelerinin tamamlanma yönlendirmesi aynı Player/PDFReader/Files devir sözleşmelerini kullanabilir, ancak uygulaması iPad1Downloader'a aittir.
 
-## Experimental — SFTP / FTPS
+## Deneysel — SFTP / FTPS
 
-- [ ] Build a minimal armv7/iOS 5 libssh2 proof-of-concept outside the main app.
-- [ ] Measure idle RAM, transfer RAM and CPU on the physical device.
-- [ ] Integrate SFTP only if profiling is acceptable.
-- [ ] Evaluate FTPS separately from SFTP.
-- [ ] Do not add SMB or other heavy protocols to this application.
+- [ ] Ana uygulamanın dışında minimal bir armv7/iOS 5 libssh2 kavram kanıtı derle.
+- [ ] Fiziksel cihazda boşta RAM, transfer sırasında RAM ve CPU ölç.
+- [ ] SFTP'yi yalnızca profil kabul edilebilirse entegre et.
+- [ ] FTPS'i SFTP'den ayrı değerlendir.
+- [ ] Bu uygulamaya SMB veya başka ağır protokoller ekleme.
 
-## Explicit non-goals
+## Açıkça hedef dışı
 
-Do not add HTTP/HTTPS downloader behavior, browser-download workflows, advanced local copy/move, general folder management, favorites, filesystem-wide local search, classification, rich preview framework, media playback/codecs/subtitles, full PDF reader functionality, ZIP manager, text editor, Open With registry, terminal/shell, VNC/remote desktop, OCR, AI/ML, whole-file RAM buffering or large background caches.
+HTTP/HTTPS indirici davranışı, tarayıcıdan indirme akışları, gelişmiş yerel kopyala/taşı, genel klasör yönetimi, favoriler, dosya sistemi genelinde yerel arama, sınıflandırma, zengin önizleme çatısı, medya oynatma/codec/altyazı, tam PDF okuyucu işlevi, ZIP yöneticisi, metin düzenleyici, "Birlikte Aç" kaydı, terminal/kabuk, VNC/uzak masaüstü, OCR, AI/ML, dosyanın tamamını RAM'de tutma veya büyük arka plan önbellekleri ekleme.
 
-## Definition of done for v1.3
+## v1.3 için "bitti" tanımı
 
-v1.3 is done only when:
+v1.3 ancak şu koşullarda bitmiş sayılır:
 
-1. clean build/package/install succeeds on the physical iPad 1;
-2. canonical shared download root is used;
-3. no duplicate physical copy is created for new FTP transfers;
-4. remote directory navigation never requires manual `/` correction;
-5. FTP download/upload and remote command regressions pass;
-6. PDF and video completion hand-offs open the same physical file when the relevant sibling app is installed;
-7. local UI remains lightweight and FTP-transfer-oriented;
-8. sibling-owned functionality is delegated instead of duplicated;
-9. folder-picker/preference work is either implemented and verified or explicitly deferred;
-10. `TESTING.md`, `CHANGELOG.md`, `SESSION.md`, `INTEGRATION.md` and `SIBLING_APP_INSTRUCTIONS.md` reflect actual tested behavior.
+1. temiz derleme/paketleme/kurulum fiziksel iPad 1'de başarılı;
+2. standart ortak indirme kökü kullanılıyor;
+3. yeni FTP transferleri için yinelenen fiziksel kopya oluşmuyor;
+4. uzak dizin gezinme hiçbir zaman elle `/` düzeltmesi gerektirmiyor;
+5. FTP indirme/yükleme ve uzak komut regresyonları geçiyor;
+6. ilgili kardeş uygulama kuruluyken PDF ve video tamamlama devirleri aynı fiziksel dosyayı açıyor;
+7. yerel arayüz hafif ve FTP transferine odaklı kalıyor;
+8. kardeş uygulamalara ait işlevler çoğaltılmak yerine devrediliyor;
+9. klasör seçici / tercih işi ya yazılıp doğrulandı ya da açıkça ertelendi;
+10. `TESTING.md`, `CHANGELOG.md`, `SESSION.md`, `INTEGRATION.md` ve `SIBLING_APP_INSTRUCTIONS.md` gerçek test edilmiş davranışı yansıtıyor.

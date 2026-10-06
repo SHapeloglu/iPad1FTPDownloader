@@ -1,14 +1,14 @@
 # ARCHITECTURE.md
 
-## Overview
+## Genel bakış
 
-iPad1FTPDownloader is the **FTP specialist** for the iPad 1 application family. It is designed for first-generation iPads running iOS 5.1.1 with 256 MB RAM.
+iPad1FTPDownloader, iPad 1 uygulama ailesinin **FTP uzmanıdır**. iOS 5.1.1 çalıştıran, 256 MB RAM'li birinci nesil iPad'ler için tasarlanmıştır.
 
-It must remain focused on remote FTP operations and efficient streamed FTP transfer. Generic HTTP/HTTPS downloading belongs to iPad1Downloader. General local filesystem management belongs to iPad1Files. Media playback belongs to iPad1Player. PDF rendering belongs to iPad1PDFReader.
+Uzak FTP işlemlerine ve verimli, akış tabanlı FTP transferine odaklı kalmalıdır. Genel HTTP/HTTPS indirme iPad1Downloader'a, genel yerel dosya sistemi yönetimi iPad1Files'a, medya oynatma iPad1Player'a, PDF görüntüleme iPad1PDFReader'a aittir.
 
-## Mandatory sibling-app ownership gate
+## Zorunlu kardeş uygulama sahiplik kapısı
 
-Before proposing, designing or implementing **any** new feature, first determine which application owns the responsibility.
+**Herhangi** bir yeni özelliği önermeden, tasarlamadan veya yazmadan önce sorumluluğun hangi uygulamaya ait olduğunu belirle.
 
 ```text
 New feature request
@@ -26,14 +26,14 @@ VNC / remote desktop                 → iPad1VNC
 If another app owns it: integrate/hand off; do not duplicate it here.
 ```
 
-A file's type does not determine transfer ownership. Transport determines the downloader:
+Dosya türü transfer sahipliğini belirlemez; indiriciyi taşıma protokolü belirler:
 
-- video over FTP -> iPad1FTPDownloader performs the transfer, then hands the completed file to iPad1Player;
-- video over HTTP/HTTPS -> iPad1Downloader performs the transfer, then hands the completed file to iPad1Player.
+- FTP üzerinden video -> transferi iPad1FTPDownloader yapar, tamamlanan dosyayı iPad1Player'a devreder;
+- HTTP/HTTPS üzerinden video -> transferi iPad1Downloader yapar, tamamlanan dosyayı iPad1Player'a devreder.
 
-Never add a feature here solely because a competitor bundles FTP, HTTP downloading, file management and playback into one app.
+Bir rakip FTP, HTTP indirme, dosya yönetimi ve oynatmayı tek uygulamada topluyor diye buraya özellik ekleme.
 
-## Platform constraints
+## Platform kısıtları
 
 - iPad 1
 - 256 MB RAM
@@ -42,11 +42,11 @@ Never add a feature here solely because a competitor bundles FTP, HTTP downloadi
 - Objective-C
 - non-ARC / MRC
 - Theos
-- UIKit APIs available to iOS 5
+- iOS 5'te bulunan UIKit API'leri
 - CFNetwork / CFFTP
-- stream-based FTP transfers
+- akış tabanlı FTP transferleri
 
-## Application-family flow
+## Uygulama ailesi akışı
 
 ```text
 FTP Server
@@ -61,45 +61,45 @@ completed-file hand-off
    └─ other -> iPad1Files
 ```
 
-HTTP/HTTPS sources follow a separate path through iPad1Downloader and are not implemented by this application.
+HTTP/HTTPS kaynakları iPad1Downloader üzerinden ayrı bir yol izler ve bu uygulamada yapılmaz.
 
-## Shared storage boundary
+## Ortak depolama sınırı
 
-Canonical local download root:
+Standart yerel indirme kökü:
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-The directory must be created if missing.
+Dizin yoksa oluşturulmalıdır.
 
-The old path `/var/mobile/Media/iPad1FTPDownloads/` is deprecated for new downloads.
+Eski `/var/mobile/Media/iPad1FTPDownloads/` yolu yeni indirmeler için kullanımdan kalkmıştır.
 
-### Single physical file invariant
+### Tek fiziksel dosya kuralı
 
-A completed transfer is stored once, directly at its canonical location. Do not copy the same file into another app-owned folder merely for integration.
+Tamamlanan transfer bir kez, doğrudan standart konumuna kaydedilir. Aynı dosyayı yalnızca entegrasyon için başka bir uygulamanın klasörüne kopyalama.
 
-## Core layers
+## Temel katmanlar
 
-### UI layer
+### Arayüz katmanı
 
-Responsibilities:
+Sorumlulukları:
 
-- FTP connection fields;
-- current remote FTP path;
-- remote directory table;
-- remote search/sort controls;
-- FTP transfer progress/speed;
-- FTP transfer queue state;
-- lightweight completed-transfer results;
-- sibling-app hand-off actions;
-- FTP error/status feedback.
+- FTP bağlantı alanları;
+- güncel uzak FTP yolu;
+- uzak dizin tablosu;
+- uzak arama / sıralama kontrolleri;
+- FTP transfer ilerlemesi / hızı;
+- FTP transfer kuyruğu durumu;
+- tamamlanan transferlerin hafif sonuç listesi;
+- kardeş uygulamaya devir eylemleri;
+- FTP hata / durum bildirimleri.
 
-The UI must not grow into a browser downloader, general-purpose file manager, media player or PDF reader.
+Arayüz bir tarayıcı indiricisine, genel dosya yöneticisine, medya oynatıcıya veya PDF okuyucuya dönüşmemelidir.
 
-### Canonical remote-path helper
+### Standart uzak yol yardımcısı
 
-Every remote FTP directory path must:
+Her uzak FTP dizin yolu:
 
 ```text
 start with /
@@ -107,165 +107,165 @@ end with /
 root is exactly /
 ```
 
-Use one canonical helper for manual entry, current-path assignment, child navigation, parent navigation, refresh and FTP URL construction.
+Elle giriş, güncel yol ataması, alt klasöre gitme, üst klasöre çıkma, yenileme ve FTP URL'si oluşturma için tek bir standart yardımcı kullan.
 
-### FTP browsing layer
+### FTP gezinme katmanı
 
-`FTPBrowser` owns FTP directory listing only:
+`FTPBrowser` yalnızca FTP dizin listelemesinden sorumludur:
 
-- build FTP directory URLs from normalized paths;
-- apply credentials;
-- read directory-listing streams;
-- parse server listing into file/folder metadata;
-- return items through a delegate.
+- normalleştirilmiş yollardan FTP dizin URL'leri oluşturmak;
+- kimlik bilgilerini uygulamak;
+- dizin listeleme akışlarını okumak;
+- sunucu listesini dosya/klasör metadata'sına ayrıştırmak;
+- öğeleri delegate üzerinden döndürmek.
 
-Do not recursively cache the full server tree.
+Sunucu ağacının tamamını özyinelemeli olarak önbelleğe alma.
 
-### FTP download layer
+### FTP indirme katmanı
 
-`FTPDownloader` owns FTP transfer mechanics:
+`FTPDownloader` FTP transfer mekaniğinden sorumludur:
 
-- open CFFTP read stream;
-- stream directly to disk;
-- create the canonical local directory if needed;
-- report progress and speed;
-- support pause/resume through FTP offsets where server/CFNetwork support permits it;
-- close streams safely on finish/failure/pause/cancel.
+- CFFTP okuma akışını açmak;
+- doğrudan diske akıtmak;
+- gerekirse standart yerel dizini oluşturmak;
+- ilerleme ve hız bildirmek;
+- sunucu/CFNetwork izin verdiği ölçüde FTP ofsetleriyle duraklat/devam desteği;
+- bitiş/hata/duraklatma/iptalde akışları güvenle kapatmak.
 
-No post-download copy is permitted for sibling integration.
+Kardeş entegrasyonu için indirme sonrası kopyalamaya izin yoktur.
 
-### Upload layer
+### Yükleme katmanı
 
-`FTPUploader` owns FTP upload only:
+`FTPUploader` yalnızca FTP yüklemeden sorumludur:
 
-- read local files incrementally;
-- write to FTP output stream;
-- report sent bytes and speed;
-- avoid whole-file buffering.
+- yerel dosyaları parça parça okumak;
+- FTP çıkış akışına yazmak;
+- gönderilen bayt ve hızı bildirmek;
+- dosyanın tamamını tamponlamaktan kaçınmak.
 
-The local source path may be handed in by iPad1Files.
+Yerel kaynak yolu iPad1Files tarafından verilebilir.
 
-### Remote command layer
+### Uzak komut katmanı
 
-`FTPCommandClient` owns remote FTP operations:
+`FTPCommandClient` uzak FTP işlemlerinden sorumludur:
 
 - `DELE`;
 - `RMD`;
 - `MKD`;
 - `RNFR` / `RNTO`.
 
-### Transfer manager
+### Transfer yöneticisi
 
-`TransferQueue` and related FTP transfer-state code own:
+`TransferQueue` ve ilgili FTP transfer durumu kodu şunlardan sorumludur:
 
-- metadata-only FIFO queue;
-- current FTP transfer state;
-- pause/resume/cancel/retry;
-- failed-transfer recovery;
-- bounded history if implemented.
+- yalnız metadata tutan FIFO kuyruk;
+- güncel FTP transfer durumu;
+- duraklat / devam / iptal / yeniden dene;
+- başarısız transferden kurtarma;
+- yapılırsa sınırlı geçmiş.
 
-The queue must never retain file contents. On iPad 1, prefer one active transfer at a time or similarly low bounded concurrency.
+Kuyruk asla dosya içeriği tutmamalıdır. iPad 1'de aynı anda tek aktif transfer veya benzer şekilde düşük, sınırlı eşzamanlılık tercih edilir.
 
-## Completed-file hand-off
+## Tamamlanan dosyanın devri
 
-Hand-off happens only after a transfer finishes successfully and the local file is accessible.
+Devir yalnızca transfer başarıyla bittikten ve yerel dosya erişilebilir olduktan sonra yapılır.
 
 ### Video
 
-Case-insensitive extensions:
+Büyük/küçük harf duyarsız uzantılar:
 
 ```text
 .mkv .mp4 .mov .m4v .avi
 ```
 
-Use:
+Kullanım:
 
 ```text
 ipad1player://open?path=<percent-encoded-absolute-path>
 ```
 
-FTPDownloader must not decode, render, seek, inspect subtitles or play video.
+FTPDownloader video çözmemeli, görüntülememeli, ileri sarmamalı, altyazı incelememeli veya oynatmamalıdır.
 
 ### PDF
 
-Use:
+Kullanım:
 
 ```text
 ipad1pdf://open?path=<percent-encoded-absolute-path>
 ```
 
-### Other files / show in files
+### Diğer dosyalar / dosyalarda göster
 
-Use:
+Kullanım:
 
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-All hand-offs use the same physical file.
+Tüm devirler aynı fiziksel dosyayı kullanır.
 
-## Explicit iPad1Downloader boundary
+## Açık iPad1Downloader sınırı
 
-Do not implement these in iPad1FTPDownloader:
+Bunları iPad1FTPDownloader'da yazma:
 
-- generic HTTP/HTTPS download;
-- browser/web URL download workflows;
-- HTTP redirects;
-- HTTP cookies/headers;
-- HTTP/HTTPS resume semantics;
-- HTTP/HTTPS queue/retry/failure management.
+- genel HTTP/HTTPS indirme;
+- tarayıcı / web URL'si indirme akışları;
+- HTTP yönlendirmeleri;
+- HTTP çerezleri / başlıkları;
+- HTTP/HTTPS devam ettirme;
+- HTTP/HTTPS kuyruk / yeniden deneme / hata yönetimi.
 
-Those belong to iPad1Downloader.
+Bunlar iPad1Downloader'a aittir.
 
-## Local browser scope
+## Yerel gezgin kapsamı
 
-Allowed here only for transfer-oriented results and sibling-app hand-off. General local copy/move, folder management, favorites, filesystem-wide search, ZIP/archive, rich preview, text editing and Open With belong to iPad1Files or another specialist app.
+Burada yalnızca transfere yönelik sonuçlar ve kardeş uygulamaya devir için izin verilir. Genel yerel kopyala/taşı, klasör yönetimi, favoriler, dosya sistemi genelinde arama, ZIP/arşiv, zengin önizleme, metin düzenleme ve "Birlikte Aç" iPad1Files'a veya başka bir uzman uygulamaya aittir.
 
-## Secure protocol research boundary
+## Güvenli protokol araştırma sınırı
 
 ### SFTP
 
-SFTP is not provided by CFFTPStream. Any implementation requires a real SSH/SFTP library compiled for armv7/iOS 5 and physical-device profiling before integration.
+SFTP, CFFTPStream tarafından sağlanmaz. Her uygulama, armv7/iOS 5 için derlenmiş gerçek bir SSH/SFTP kütüphanesi ve entegrasyon öncesi fiziksel cihaz profili gerektirir.
 
 ### FTPS
 
-FTPS requires a real TLS-aware FTP implementation and must be evaluated separately.
+FTPS, TLS farkındalığı olan gerçek bir FTP uygulaması gerektirir ve ayrıca değerlendirilmelidir.
 
-## Streaming boundary
+## Akış (streaming) sınırı
 
-Future direct media streaming is not automatically assigned to FTPDownloader or Player. It must first pass the suite responsibility gate. Network transport state and media decode/render state must remain separable.
+İleride doğrudan medya akışı otomatik olarak FTPDownloader'a veya Player'a atanmaz. Önce uygulama ailesinin sorumluluk kapısından geçmelidir. Ağ taşıma durumu ile medya çözme/görüntüleme durumu ayrılabilir kalmalıdır.
 
-## Memory policy
+## Bellek politikası
 
-### Safe
+### Güvenli
 
-- streamed FTP read/write;
-- small transfer buffers, approximately 8–16 KB class;
-- bounded queue metadata;
-- path/URL hand-offs.
+- akışla FTP okuma/yazma;
+- yaklaşık 8–16 KB'lık küçük transfer tamponları;
+- sınırlı kuyruk metadata'sı;
+- yol/URL devirleri.
 
-### Caution
+### Dikkatli
 
-- simultaneous transfers;
-- recursive remote search;
-- very long queues;
-- heavy secure-protocol dependencies.
+- eşzamanlı transferler;
+- özyinelemeli uzak arama;
+- çok uzun kuyruklar;
+- ağır güvenli protokol bağımlılıkları.
 
-### Forbidden by architecture
+### Mimari olarak yasak
 
-- loading complete transferred files into RAM;
-- HTTP/HTTPS downloader subsystem;
-- duplicate physical files for integration;
-- media decode/playback;
-- PDF rendering;
-- general rich-preview subsystem;
+- aktarılan dosyaların tamamını RAM'e yüklemek;
+- HTTP/HTTPS indirici alt sistemi;
+- entegrasyon için yinelenen fiziksel dosyalar;
+- medya çözme / oynatma;
+- PDF görüntüleme;
+- genel zengin önizleme alt sistemi;
 - OCR;
 - AI/ML;
-- large background caches;
-- SMB expansion;
-- heavy SFTP libraries without measured physical-device profiling.
+- büyük arka plan önbellekleri;
+- SMB genişletmesi;
+- fiziksel cihazda ölçülmeden ağır SFTP kütüphaneleri.
 
-## Build/deployment topology
+## Derleme / dağıtım topolojisi
 
 ```text
 Windows + WSL Ubuntu + Theos
@@ -279,14 +279,14 @@ jailbroken iPad 1
      dpkg -i
 ```
 
-## Ownership decision rule
+## Sahiplik karar kuralı
 
-- FTP transfer / remote FTP operation -> **iPad1FTPDownloader**
-- HTTP/HTTPS download -> **iPad1Downloader**
-- Local filesystem / picker -> **iPad1Files**
-- Video playback / codecs / subtitles -> **iPad1Player**
-- PDF reading / rendering -> **iPad1PDFReader**
-- Terminal / shell -> **iPad1Terminal**
-- VNC / remote desktop -> **iPad1VNC**
+- FTP transferi / uzak FTP işlemi -> **iPad1FTPDownloader**
+- HTTP/HTTPS indirme -> **iPad1Downloader**
+- Yerel dosya sistemi / seçici -> **iPad1Files**
+- Video oynatma / codec / altyazı -> **iPad1Player**
+- PDF okuma / görüntüleme -> **iPad1PDFReader**
+- Terminal / kabuk -> **iPad1Terminal**
+- VNC / uzak masaüstü -> **iPad1VNC**
 
-This decision must be made before implementation. Prefer shared physical paths and lightweight URL-scheme hand-offs over duplicated subsystems or duplicated files.
+Bu karar uygulamadan önce verilmelidir. Yinelenen alt sistemler veya yinelenen dosyalar yerine ortak fiziksel yolları ve hafif URL-scheme devirlerini tercih et.

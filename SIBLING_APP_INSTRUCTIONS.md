@@ -1,42 +1,42 @@
 # SIBLING_APP_INSTRUCTIONS.md
 
-## Purpose
+## Amaç
 
-This document defines work discovered while reviewing iPad1FTPDownloader that belongs to sibling specialist applications. Do not reimplement these capabilities inside iPad1FTPDownloader.
+Bu doküman, iPad1FTPDownloader incelenirken ortaya çıkan ve kardeş uzman uygulamalara ait olan işleri tanımlar. Bu yetenekleri iPad1FTPDownloader içinde yeniden yazma.
 
-## Mandatory ownership gate
+## Zorunlu sahiplik kapısı
 
-Before implementing any feature, determine its primary owner:
+Herhangi bir özelliği yazmadan önce birincil sahibini belirle:
 
-- FTP transfer / remote FTP operations -> iPad1FTPDownloader
-- HTTP/HTTPS downloads -> iPad1HTTPDownloader
-- local filesystem, folder/file picking, copy/move, ZIP, general preview -> iPad1Files
-- video decode/playback/subtitle handling -> iPad1Player
-- PDF rendering/reading/annotation -> iPad1PDFReader
-- shell/terminal/command execution -> iPad1Terminal
-- VNC/remote desktop -> iPad1VNC
+- FTP transferi / uzak FTP işlemleri -> iPad1FTPDownloader
+- HTTP/HTTPS indirmeleri -> iPad1HTTPDownloader
+- yerel dosya sistemi, klasör/dosya seçme, kopyala/taşı, ZIP, genel önizleme -> iPad1Files
+- video çözme / oynatma / altyazı -> iPad1Player
+- PDF görüntüleme / okuma / notlandırma -> iPad1PDFReader
+- kabuk / terminal / komut çalıştırma -> iPad1Terminal
+- VNC / uzak masaüstü -> iPad1VNC
 
-If another application owns the capability, integrate by shared physical path and a lightweight URL-scheme hand-off. Do not duplicate the subsystem.
+Yetenek başka bir uygulamaya aitse ortak fiziksel yol ve hafif bir URL-scheme devriyle entegre ol. Alt sistemi çoğaltma.
 
 ---
 
-## iPad1HTTPDownloader instructions
+## iPad1HTTPDownloader yönergeleri
 
-HTTP/HTTPS downloading belongs here, not in iPad1FTPDownloader.
+HTTP/HTTPS indirme iPad1FTPDownloader'a değil buraya aittir.
 
-Expected ownership:
+Beklenen sorumluluklar:
 
-- generic HTTP downloads;
-- generic HTTPS downloads;
-- browser/web URL download workflows where intentionally supported;
-- redirects;
-- cookies/headers where required by download transport;
-- HTTP/HTTPS resume semantics;
-- HTTP/HTTPS queue/progress/retry/failure management;
-- stream-to-disk behavior for large files;
-- deliberately low concurrency on iPad 1.
+- genel HTTP indirmeleri;
+- genel HTTPS indirmeleri;
+- bilinçli olarak desteklenen yerlerde tarayıcı / web URL'si indirme akışları;
+- yönlendirmeler;
+- indirme için gereken yerlerde çerezler / başlıklar;
+- HTTP/HTTPS devam ettirme;
+- HTTP/HTTPS kuyruk / ilerleme / yeniden deneme / hata yönetimi;
+- büyük dosyalar için doğrudan diske akıtma;
+- iPad 1'de bilinçli olarak düşük eşzamanlılık.
 
-Recommended completed-file routing should mirror the suite contracts:
+Tamamlanan dosyaların yönlendirmesi uygulama ailesi sözleşmeleriyle aynı olmalı:
 
 ```text
 .mkv/.mp4/.mov/.m4v/.avi -> ipad1player://open?path=...
@@ -44,88 +44,88 @@ Recommended completed-file routing should mirror the suite contracts:
 other                    -> ipad1files://show?path=...
 ```
 
-Only completed, accessible local file paths should be handed to sibling apps. Do not copy files merely for integration.
+Kardeş uygulamalara yalnızca tamamlanmış, erişilebilir yerel dosya yolları verilmelidir. Dosyaları yalnızca entegrasyon için kopyalama.
 
 ---
 
-## iPad1Files instructions
+## iPad1Files yönergeleri
 
-### Folder picker
+### Klasör seçici
 
-Provide:
+Sağlanacak:
 
 ```text
 ipad1files://pickFolder?root=<percent-encoded-root>&callback=<percent-encoded-callback>
 ```
 
-Downloader apps should normally supply the canonical root:
+İndirici uygulamalar normalde standart kökü verir:
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-Requirements:
+Gereksinimler:
 
-- picker must stay inside the supplied root;
-- return an absolute canonical path;
-- do not copy the selected folder or transferred file;
-- work cold and warm launch;
-- preserve iPad 1 / iOS 5.1.1 / armv7 / MRC compatibility.
+- seçici verilen kökün içinde kalmalı;
+- mutlak, standart bir yol döndürmeli;
+- seçilen klasörü veya aktarılan dosyayı kopyalamamalı;
+- uygulama kapalıyken de açıkken de çalışmalı (cold / warm launch);
+- iPad 1 / iOS 5.1.1 / armv7 / MRC uyumluluğunu korumalı.
 
-### File picker for FTP upload
+### FTP yüklemesi için dosya seçici
 
-Recommended contract:
+Önerilen sözleşme:
 
 ```text
 ipad1files://pickFile?root=<percent-encoded-root>&callback=<percent-encoded-callback>
 ```
 
-Callback:
+Geri çağrı:
 
 ```text
 ipad1ftp://fileSelected?path=<percent-encoded-absolute-path>
 ```
 
-Requirements:
+Gereksinimler:
 
-- iPad1Files owns local browsing UI;
-- FTPDownloader receives only the selected path and performs streamed FTP upload;
-- do not duplicate files;
-- reject inaccessible/non-file results cleanly;
-- keep picker memory usage bounded.
+- yerel gezinme arayüzü iPad1Files'a aittir;
+- FTPDownloader yalnızca seçilen yolu alır ve akışla FTP yüklemesi yapar;
+- dosyalar çoğaltılmaz;
+- erişilemeyen veya dosya olmayan sonuçlar temiz biçimde reddedilir;
+- seçicinin bellek kullanımı sınırlı tutulur.
 
-### Show downloaded file
+### İndirilen dosyayı gösterme
 
-Support:
+Desteklenecek:
 
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-The same physical file must be shown. No copy is allowed.
+Aynı fiziksel dosya gösterilmelidir. Kopyalamaya izin yoktur.
 
-### Features that stay entirely in iPad1Files
+### Tamamen iPad1Files'ta kalan özellikler
 
-- local copy/move;
-- folder management;
-- local search;
-- favorites/tags/classification;
-- ZIP/archive management;
-- image/general file preview;
-- general Open With behavior;
-- broad local file metadata UI.
+- yerel kopyala / taşı;
+- klasör yönetimi;
+- yerel arama;
+- favoriler / etiketler / sınıflandırma;
+- ZIP / arşiv yönetimi;
+- görsel / genel dosya önizleme;
+- genel "Birlikte Aç" davranışı;
+- kapsamlı yerel dosya metadata arayüzü.
 
 ---
 
-## iPad1Player instructions
+## iPad1Player yönergeleri
 
-Support the completed-file hand-off contract:
+Tamamlanan dosya devir sözleşmesini destekle:
 
 ```text
 ipad1player://open?path=<percent-encoded-absolute-path>
 ```
 
-Downloader apps may call it only after a successful completed download for these case-insensitive extensions:
+İndirici uygulamalar bunu yalnızca başarıyla tamamlanmış indirmelerde, şu büyük/küçük harf duyarsız uzantılar için çağırabilir:
 
 ```text
 .mkv
@@ -135,59 +135,59 @@ Downloader apps may call it only after a successful completed download for these
 .avi
 ```
 
-Requirements:
+Gereksinimler:
 
-- open the same physical completed file; no copy;
-- work both cold and warm launch;
-- accept an accessible local path only;
-- media decode, playback UI, seeking, codec behavior and subtitle discovery/rendering stay entirely in iPad1Player;
-- Player must not own FTPDownloader queue/progress/pause-resume/retry/failure state;
-- Player must not own iPad1HTTPDownloader HTTP/HTTPS transfer lifecycle;
-- downloader apps must not decode or play video while transfer is in progress.
+- aynı tamamlanmış fiziksel dosyayı açmalı; kopya yok;
+- uygulama kapalıyken de açıkken de çalışmalı;
+- yalnızca erişilebilir yerel yol kabul etmeli;
+- medya çözme, oynatma arayüzü, ileri sarma, codec davranışı ve altyazı bulma/gösterme tamamen iPad1Player'da kalır;
+- Player, FTPDownloader'ın kuyruk/ilerleme/duraklat-devam/yeniden deneme/hata durumunu üstlenmemeli;
+- Player, iPad1HTTPDownloader'ın HTTP/HTTPS transfer yaşam döngüsünü üstlenmemeli;
+- indirici uygulamalar transfer sürerken video çözmemeli veya oynatmamalı.
 
-Future streaming requires a separate suite responsibility review. Do not merge downloader transfer state with Player decode/render state.
+İleride akış (streaming) için ayrı bir uygulama ailesi sorumluluk incelemesi gerekir. İndiricinin transfer durumunu Player'ın çözme/görüntüleme durumuyla birleştirme.
 
 ---
 
-## iPad1PDFReader instructions
+## iPad1PDFReader yönergeleri
 
-Support:
+Desteklenecek:
 
 ```text
 ipad1pdf://open?path=<percent-encoded-absolute-path>
 ```
 
-Requirements:
+Gereksinimler:
 
-- open the same physical completed PDF;
-- work cold and warm launch;
-- rendering, zoom, page navigation, bookmark and highlight behavior stay entirely in iPad1PDFReader;
-- downloader apps must never embed PDF rendering or create a duplicate PDF copy for hand-off.
-
----
-
-## iPad1Terminal instructions
-
-Terminal and shell execution are outside downloader scope. Any future path/host hand-off must be defined first by iPad1Terminal.
+- aynı tamamlanmış fiziksel PDF açılmalı;
+- uygulama kapalıyken de açıkken de çalışmalı;
+- görüntüleme, yakınlaştırma, sayfa gezinme, yer imi ve vurgulama tamamen iPad1PDFReader'da kalır;
+- indirici uygulamalar asla PDF görüntüleme gömmemeli veya devir için yinelenen PDF kopyası oluşturmamalı.
 
 ---
 
-## iPad1VNC instructions
+## iPad1Terminal yönergeleri
 
-VNC/remote desktop is outside downloader scope. Any future host-context hand-off must be defined first by iPad1VNC.
+Terminal ve kabuk komutu çalıştırma indirici kapsamının dışındadır. İleride yol/host devri gerekirse önce iPad1Terminal tarafından tanımlanmalıdır.
 
 ---
 
-## Transfer constraints relevant to downloader apps
+## iPad1VNC yönergeleri
 
-- completed files are handed off by path only;
-- large files are streamed to disk rather than buffered in RAM;
-- iPad 1 concurrency remains deliberately low;
-- queue/progress/pause-resume/retry/failure handling stays with the downloader that owns the transport;
-- sibling reader/player apps receive only completed accessible files unless a separately approved streaming contract exists.
+VNC / uzak masaüstü indirici kapsamının dışındadır. İleride host bağlamı devri gerekirse önce iPad1VNC tarafından tanımlanmalıdır.
 
-## Removal rule
+---
 
-A temporary fallback inside a downloader may remain only until the owning sibling app has a physically verified receiving contract. Once the hand-off is verified on iPad 1, remove duplicate fallback behavior where appropriate.
+## İndirici uygulamaları ilgilendiren transfer kısıtları
 
-Physical-device behavior is authoritative.
+- tamamlanan dosyalar yalnızca yol ile devredilir;
+- büyük dosyalar RAM'de tamponlanmak yerine diske akıtılır;
+- iPad 1'de eşzamanlılık bilinçli olarak düşük tutulur;
+- kuyruk / ilerleme / duraklat-devam / yeniden deneme / hata yönetimi, taşıma protokolünün sahibi olan indiricide kalır;
+- ayrıca onaylanmış bir akış sözleşmesi olmadıkça kardeş okuyucu/oynatıcı uygulamalar yalnızca tamamlanmış ve erişilebilir dosyaları alır.
+
+## Kaldırma kuralı
+
+İndirici içindeki geçici bir yedek davranış, sahibi olan kardeş uygulamanın fiziksel olarak doğrulanmış bir alma sözleşmesi olana kadar kalabilir. Devir iPad 1'de doğrulandıktan sonra uygun olan yerlerde yinelenen yedek davranışı kaldır.
+
+Belirleyici olan fiziksel cihaz davranışıdır.

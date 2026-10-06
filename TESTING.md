@@ -1,10 +1,10 @@
 # TESTING.md
 
-## Purpose
+## Amaç
 
-Successful compilation is not sufficient proof. Physical-device testing on an iPad 1 running iOS 5.1.1 is required for release confidence.
+Başarılı derleme tek başına yeterli kanıt değildir. Sürüme güvenmek için iOS 5.1.1 çalıştıran bir iPad 1'de fiziksel cihaz testi gerekir.
 
-## Build verification
+## Derleme doğrulaması
 
 ```bash
 cd ~/projects/ipad1ftp/iPad1FTPDownloader_v1.3
@@ -13,15 +13,15 @@ make clean
 make package FINALPACKAGE=1
 ```
 
-Pass criteria:
+Geçme ölçütleri:
 
-- No compile errors.
-- No link errors.
-- `.deb` created under `packages/`.
-- Package version matches intended release.
-- `Info.plist` is present in the staged app bundle/package.
+- Derleme hatası yok.
+- Bağlama (link) hatası yok.
+- `packages/` altında `.deb` oluştu.
+- Paket sürümü hedeflenen sürümle aynı.
+- Hazırlanan uygulama paketinde `Info.plist` var.
 
-## Install verification
+## Kurulum doğrulaması
 
 ```bash
 scp -o HostKeyAlgorithms=+ssh-rsa \
@@ -30,7 +30,7 @@ packages/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb \
 root@192.168.1.2:/var/mobile/
 ```
 
-On the iPad:
+iPad'de:
 
 ```bash
 dpkg -i /var/mobile/com.olap.ipad1ftpdownloader_1.3.0_iphoneos-arm.deb
@@ -38,186 +38,186 @@ su mobile -c "/usr/bin/uicache"
 killall SpringBoard
 ```
 
-Pass criteria:
+Geçme ölçütleri:
 
-- package setup succeeds;
-- app remains launchable;
-- app does not immediately crash.
+- paket kurulumu başarılı;
+- uygulama açılabiliyor;
+- uygulama hemen çökmüyor.
 
-## Core FTP connection tests
+## Temel FTP bağlantı testleri
 
-### Valid credentials
+### Geçerli kimlik bilgileri
 
-- [ ] Enter host/port/username/password.
-- [ ] Connect to `/`.
-- [ ] Directory listing appears.
+- [ ] Host/port/kullanıcı adı/şifre gir.
+- [ ] `/` dizinine bağlan.
+- [ ] Dizin listesi görünüyor.
 
-### Invalid credentials
+### Geçersiz kimlik bilgileri
 
-- [ ] Invalid password reports a useful error.
-- [ ] UI remains usable afterward.
+- [ ] Yanlış şifre işe yarar bir hata gösteriyor.
+- [ ] Sonrasında arayüz kullanılabilir kalıyor.
 
-### Unreachable host
+### Erişilemeyen host
 
-- [ ] Connection failure is reported.
-- [ ] App does not freeze.
+- [ ] Bağlantı hatası bildiriliyor.
+- [ ] Uygulama donmuyor.
 
-## Directory-path regression tests
+## Dizin yolu regresyon testleri
 
-- [ ] `/` stays `/`.
-- [ ] Manual `domains` becomes `/domains/`.
-- [ ] Manual `/domains` becomes `/domains/`.
-- [ ] Manual `/domains/` stays `/domains/`.
-- [ ] Child navigation preserves trailing `/`.
-- [ ] Nested child navigation needs no manual slash correction.
-- [ ] Parent navigation returns to the correct parent.
-- [ ] Repeated parent navigation eventually produces `/`.
-- [ ] Refresh at each level preserves normalized state.
+- [ ] `/` olduğu gibi `/` kalıyor.
+- [ ] Elle girilen `domains`, `/domains/` oluyor.
+- [ ] Elle girilen `/domains`, `/domains/` oluyor.
+- [ ] Elle girilen `/domains/` olduğu gibi kalıyor.
+- [ ] Alt klasöre gitmek sondaki `/` işaretini koruyor.
+- [ ] İç içe alt klasörlerde elle `/` düzeltmesi gerekmiyor.
+- [ ] Üst klasöre çıkmak doğru üst klasöre dönüyor.
+- [ ] Art arda üst klasöre çıkmak sonunda `/` üretiyor.
+- [ ] Her seviyede yenileme normalleştirilmiş durumu koruyor.
 
-## FTP download tests
+## FTP indirme testleri
 
-- [ ] Download a small text file.
-- [ ] Download a medium binary/image file.
-- [ ] Download a larger file appropriate for device storage.
-- [ ] Progress bytes increase.
-- [ ] Percentage appears when expected size is known.
-- [ ] Speed display updates.
-- [ ] Final file exists under `/var/mobile/Media/iPad1Files/Downloads/` or the physically verified selected descendant folder.
-- [ ] No duplicate new copy appears under `/var/mobile/Media/iPad1FTPDownloads/`.
-- [ ] Local size matches remote size.
-- [ ] Download completion does not corrupt the next FTP directory operation.
-- [ ] Large files are written progressively to disk; no whole-file RAM buffering behavior is observed.
+- [ ] Küçük bir metin dosyası indir.
+- [ ] Orta boy bir ikili/görsel dosya indir.
+- [ ] Cihaz depolamasına uygun daha büyük bir dosya indir.
+- [ ] İlerleyen bayt sayısı artıyor.
+- [ ] Beklenen boyut biliniyorsa yüzde görünüyor.
+- [ ] Hız göstergesi güncelleniyor.
+- [ ] Son dosya `/var/mobile/Media/iPad1Files/Downloads/` altında veya fiziksel olarak doğrulanmış seçili alt klasörde.
+- [ ] `/var/mobile/Media/iPad1FTPDownloads/` altında yeni bir yinelenen kopya oluşmuyor.
+- [ ] Yerel boyut uzak boyutla eşleşiyor.
+- [ ] İndirmenin tamamlanması bir sonraki FTP dizin işlemini bozmuyor.
+- [ ] Büyük dosyalar diske kademeli yazılıyor; dosyanın tamamını RAM'de tutma davranışı görülmüyor.
 
-## Pause/resume tests
+## Duraklat / devam testleri
 
-- [ ] Start a sufficiently large FTP download.
-- [ ] Pause after meaningful progress.
-- [ ] Confirm partial local file remains.
-- [ ] Resume.
-- [ ] Confirm continuation rather than restart where server supports offset resume.
-- [ ] Confirm final size matches remote size.
-- [ ] Test a server that does not support resume and confirm graceful behavior.
+- [ ] Yeterince büyük bir FTP indirmesi başlat.
+- [ ] Anlamlı ilerlemeden sonra duraklat.
+- [ ] Kısmi yerel dosyanın kaldığını doğrula.
+- [ ] Devam ettir.
+- [ ] Sunucu ofsetle devamı destekliyorsa baştan başlamak yerine kaldığı yerden devam ettiğini doğrula.
+- [ ] Son boyutun uzak boyutla eşleştiğini doğrula.
+- [ ] Devam ettirmeyi desteklemeyen bir sunucuyu test et ve davranışın düzgün olduğunu doğrula.
 
-## Upload tests
+## Yükleme testleri
 
-- [ ] Use an accessible local file from the shared Downloads area or a path handed in by iPad1Files.
-- [ ] Upload to current remote FTP directory.
-- [ ] Progress and speed update.
-- [ ] Upload reaches 100%.
-- [ ] Refresh remote directory.
-- [ ] Uploaded file appears and size matches.
+- [ ] Ortak Downloads alanından veya iPad1Files'ın verdiği bir yoldan erişilebilir bir yerel dosya kullan.
+- [ ] Güncel uzak FTP dizinine yükle.
+- [ ] İlerleme ve hız güncelleniyor.
+- [ ] Yükleme %100'e ulaşıyor.
+- [ ] Uzak dizini yenile.
+- [ ] Yüklenen dosya görünüyor ve boyutu eşleşiyor.
 
-## Remote operation tests
+## Uzak işlem testleri
 
-### Rename
+### Yeniden adlandırma
 
-- [ ] Rename a file.
-- [ ] Rename a folder if server permits it.
-- [ ] Refresh and confirm new name.
+- [ ] Bir dosyayı yeniden adlandır.
+- [ ] Sunucu izin veriyorsa bir klasörü yeniden adlandır.
+- [ ] Yenile ve yeni adı doğrula.
 
-### Delete
+### Silme
 
-- [ ] Delete a remote file.
-- [ ] Delete an empty remote folder.
-- [ ] Non-empty folder failure is surfaced usefully.
+- [ ] Uzak bir dosyayı sil.
+- [ ] Boş bir uzak klasörü sil.
+- [ ] Boş olmayan klasör hatası anlaşılır şekilde gösteriliyor.
 
-### New folder
+### Yeni klasör
 
-- [ ] Create a new folder.
-- [ ] Refresh listing.
-- [ ] Enter it.
-- [ ] Confirm path ends in `/`.
+- [ ] Yeni klasör oluştur.
+- [ ] Listeyi yenile.
+- [ ] Klasöre gir.
+- [ ] Yolun `/` ile bittiğini doğrula.
 
-## Search and sorting
+## Arama ve sıralama
 
-- [ ] Search substring matches files in the currently loaded directory.
-- [ ] Search substring matches folders in the currently loaded directory.
-- [ ] Clearing search restores the full loaded listing.
-- [x] A→Z works — physically verified 2026-08-29.
-- [x] Z→A works — physically verified 2026-08-29.
-- [ ] Folders-first works.
-- [ ] Folders-first can be disabled.
-- [ ] Search/sort remain usable after directory change.
+- [ ] Alt metin araması güncel yüklü dizindeki dosyaları buluyor.
+- [ ] Alt metin araması güncel yüklü dizindeki klasörleri buluyor.
+- [ ] Aramayı temizlemek yüklü listenin tamamını geri getiriyor.
+- [x] A→Z çalışıyor — 2026-08-29'da fiziksel olarak doğrulandı.
+- [x] Z→A çalışıyor — 2026-08-29'da fiziksel olarak doğrulandı.
+- [ ] Önce klasörler çalışıyor.
+- [ ] Önce klasörler kapatılabiliyor.
+- [ ] Dizin değiştikten sonra arama/sıralama kullanılabilir kalıyor.
 
-## Completed-file hand-off tests
+## Tamamlanan dosya devir testleri
 
-All hand-offs must use the same completed physical file; no copy is allowed.
+Tüm devirler aynı tamamlanmış fiziksel dosyayı kullanmalı; kopyaya izin yok.
 
 ### Video -> iPad1Player
 
-For `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi` case-insensitively:
+Büyük/küçük harf duyarsız `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi` için:
 
-- [ ] Completion UI offers `iPad1Player ile Aç`.
-- [ ] `ipad1player://open?path=<encoded-path>` receives the completed accessible local path.
-- [ ] Cold-launch Player opens the same file.
-- [ ] Warm-launch Player opens the same file.
-- [ ] Unavailable Player scheme fails gracefully and leaves the file untouched.
-- [ ] FTPDownloader performs no media decode/playback/subtitle handling.
+- [ ] Tamamlanma arayüzü `iPad1Player ile Aç` seçeneği sunuyor.
+- [ ] `ipad1player://open?path=<encoded-path>` tamamlanmış, erişilebilir yerel yolu alıyor.
+- [ ] Player kapalıyken açılınca (cold launch) aynı dosyayı açıyor.
+- [ ] Player açıkken (warm launch) aynı dosyayı açıyor.
+- [ ] Player scheme'i yoksa hata nazikçe gösteriliyor ve dosyaya dokunulmuyor.
+- [ ] FTPDownloader medya çözme / oynatma / altyazı işlemi yapmıyor.
 
 ### PDF -> iPad1PDFReader
 
-- [ ] `.pdf` is detected case-insensitively.
-- [ ] Completion UI offers `PDFReader ile Aç`.
-- [ ] `ipad1pdf://open?path=<encoded-path>` opens the same physical file.
-- [ ] Cold and warm launch work.
-- [ ] Unavailable PDFReader scheme fails gracefully and leaves the file untouched.
+- [ ] `.pdf` büyük/küçük harf duyarsız algılanıyor.
+- [ ] Tamamlanma arayüzü `PDFReader ile Aç` seçeneği sunuyor.
+- [ ] `ipad1pdf://open?path=<encoded-path>` aynı fiziksel dosyayı açıyor.
+- [ ] Cold ve warm launch çalışıyor.
+- [ ] PDFReader scheme'i yoksa hata nazikçe gösteriliyor ve dosyaya dokunulmuyor.
 
-### Other / Files
+### Diğer / Dosyalar
 
-- [ ] `Dosyalarda Göster` calls `ipad1files://show?path=<encoded-path>`.
-- [ ] iPad1Files shows the same physical file.
-- [ ] Unavailable scheme fails gracefully.
+- [ ] `Dosyalarda Göster`, `ipad1files://show?path=<encoded-path>` çağırıyor.
+- [ ] iPad1Files aynı fiziksel dosyayı gösteriyor.
+- [ ] Scheme yoksa hata nazikçe gösteriliyor.
 
-## Download destination picker integration
+## İndirme hedefi seçici entegrasyonu
 
-- [ ] FTPDownloader requests folder selection through iPad1Files rather than implementing a second general local browser.
-- [ ] Callback path is absolute and canonical.
-- [ ] Callback path is accepted only under `/var/mobile/Media/iPad1Files/Downloads/`.
-- [ ] Out-of-root/traversal paths are rejected.
-- [ ] Fallback to canonical Downloads does not lose FTP transfer state.
+- [ ] FTPDownloader ikinci bir genel yerel gezgin yazmak yerine klasör seçimini iPad1Files üzerinden istiyor.
+- [ ] Geri çağrı yolu mutlak ve standart.
+- [ ] Geri çağrı yolu yalnızca `/var/mobile/Media/iPad1Files/Downloads/` altındaysa kabul ediliyor.
+- [ ] Kök dışı / yol geçişi içeren yollar reddediliyor.
+- [ ] Standart Downloads'a geri dönüş FTP transfer durumunu kaybettirmiyor.
 
-## Queue / concurrency tests
+## Kuyruk / eşzamanlılık testleri
 
-- [ ] Queue at least 3 FTP downloads.
-- [ ] Transfers occur in FIFO order.
-- [ ] Preferred initial iPad 1 behavior keeps one active FTP transfer at a time.
-- [ ] First failure does not permanently block later queued items.
-- [ ] Queue metadata remains bounded.
-- [ ] Queue never retains file contents.
+- [ ] En az 3 FTP indirmesini kuyruğa al.
+- [ ] Transferler FIFO sırasıyla yapılıyor.
+- [ ] iPad 1'de tercih edilen başlangıç davranışı aynı anda tek aktif FTP transferi.
+- [ ] İlk hata sonraki kuyruk öğelerini kalıcı olarak engellemiyor.
+- [ ] Kuyruk metadata'sı sınırlı kalıyor.
+- [ ] Kuyruk asla dosya içeriği tutmuyor.
 
-## Scope regression tests
+## Kapsam regresyon testleri
 
-Confirm the application does **not** acquire sibling-owned subsystems:
+Uygulamanın kardeş uygulamalara ait alt sistemleri **edinmediğini** doğrula:
 
-- [ ] No generic HTTP/HTTPS download workflow.
-- [ ] No browser URL downloader UI.
-- [ ] No embedded media player/codec/subtitle engine.
-- [ ] No embedded PDF renderer.
-- [ ] No general local file manager or rich preview subsystem.
+- [ ] Genel HTTP/HTTPS indirme akışı yok.
+- [ ] Tarayıcı URL indirici arayüzü yok.
+- [ ] Gömülü medya oynatıcı / codec / altyazı motoru yok.
+- [ ] Gömülü PDF görüntüleyici yok.
+- [ ] Genel yerel dosya yöneticisi veya zengin önizleme alt sistemi yok.
 
-## Stress / memory tests
+## Yük / bellek testleri
 
-On the physical iPad:
+Fiziksel iPad'de:
 
-- [ ] Navigate through at least 20 folder changes.
-- [ ] Download multiple files sequentially.
-- [ ] Upload multiple files sequentially.
-- [ ] Exercise search/sort repeatedly.
-- [ ] Exercise sibling hand-offs repeatedly after completed transfers.
-- [ ] Watch for memory warnings, UI freezes, crashes or SpringBoard termination.
+- [ ] En az 20 klasör değişikliği boyunca gezin.
+- [ ] Birden fazla dosyayı ardışık indir.
+- [ ] Birden fazla dosyayı ardışık yükle.
+- [ ] Arama/sıralamayı tekrar tekrar kullan.
+- [ ] Tamamlanan transferlerden sonra kardeş uygulama devirlerini tekrar tekrar kullan.
+- [ ] Bellek uyarılarını, arayüz donmalarını, çökmeleri veya SpringBoard'un uygulamayı kapatmasını izle.
 
-## Release gate
+## Sürüm kapısı
 
-Do not label a development build stable if any required area fails:
+Gerekli alanlardan biri başarısızsa geliştirme derlemesini kararlı diye etiketleme:
 
-- build/package/install;
-- app launch;
-- remote path normalization;
-- basic FTP download;
-- basic FTP upload;
-- regression-free directory listing;
-- changed transfer-manager behavior;
-- changed sibling hand-off behavior;
-- architecture scope gate.
+- derleme / paketleme / kurulum;
+- uygulamanın açılması;
+- uzak yol normalleştirmesi;
+- temel FTP indirme;
+- temel FTP yükleme;
+- regresyonsuz dizin listeleme;
+- değişen transfer yöneticisi davranışı;
+- değişen kardeş uygulama devir davranışı;
+- mimari kapsam kapısı.
 
-Physical-device results are authoritative.
+Belirleyici olan fiziksel cihaz sonuçlarıdır.

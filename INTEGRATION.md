@@ -1,12 +1,12 @@
-# iPad1Downloader Integration Contract
+# iPad1Downloader Entegrasyon Sözleşmesi
 
-## Purpose
+## Amaç
 
-The former `iPad1FTPDownloader` is being evolved into **iPad1Downloader**, the network-transfer specialist of the iPad 1 application family.
+Eski adıyla `iPad1FTPDownloader`, iPad 1 uygulama ailesinin ağ transfer uzmanı olan **iPad1Downloader**'a dönüştürülüyor.
 
-It may own multiple network transports, but it must not absorb sibling-app responsibilities.
+Birden fazla ağ taşıma protokolüne sahip olabilir, ancak kardeş uygulamaların sorumluluklarını üstlenmemelidir.
 
-## Platform contract
+## Platform sözleşmesi
 
 - iPad 1
 - Apple A4
@@ -16,9 +16,9 @@ It may own multiple network transports, but it must not absorb sibling-app respo
 - Objective-C
 - non-ARC / MRC
 - Theos
-- legacy iPhoneOS 6.1 SDK
+- eski iPhoneOS 6.1 SDK
 
-## Responsibility matrix
+## Sorumluluk matrisi
 
 ```text
 FTP transfer / remote FTP operations -> iPad1Downloader / FTP engine
@@ -31,11 +31,11 @@ terminal/shell                       -> iPad1Terminal
 VNC                                  -> iPad1VNC
 ```
 
-Protocol ownership does not change based on file type. A video transferred over FTP is still an FTP transfer. A PDF received over Wi-Fi is still a Wi-Fi receive transfer. File type matters only after the transfer completes.
+Protokol sahipliği dosya türüne göre değişmez. FTP ile aktarılan video yine FTP transferidir. Wi-Fi ile alınan PDF yine Wi-Fi alma transferidir. Dosya türü yalnızca transfer tamamlandıktan sonra önem kazanır.
 
-## Transport architecture
+## Taşıma mimarisi
 
-Keep protocol engines separate:
+Protokol motorlarını ayrı tut:
 
 ```text
 iPad1Downloader
@@ -50,60 +50,60 @@ iPad1Downloader
     └── completed-file handoff
 ```
 
-Do not merge FTP protocol code, HTTP protocol code and incoming-LAN server code into one monolithic class.
+FTP protokol kodunu, HTTP protokol kodunu ve yerel ağdan gelen bağlantıları karşılayan sunucu kodunu tek bir dev sınıfta birleştirme.
 
-## Canonical shared storage
+## Standart ortak depolama
 
-Owned by iPad1Files:
+iPad1Files'a ait:
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-One transferred file = one physical file.
+Aktarılan bir dosya = bir fiziksel dosya.
 
-Downloader must not create a duplicate private copy merely for integration.
+Downloader yalnızca entegrasyon için özel bir yinelenen kopya oluşturmamalıdır.
 
-## iPad1Files delegation
+## iPad1Files'a devredilenler
 
-The following must be performed by `iPad1Files`, not implemented inside `iPad1Downloader`:
+Aşağıdakiler `iPad1Downloader` içinde yazılmamalı, `iPad1Files` tarafından yapılmalıdır:
 
-- local file/folder browser;
-- destination folder selection UI;
-- copy/move/rename/delete;
-- ZIP/archive management;
-- local search;
-- favorites/tags/classification;
-- downloaded-file organization;
-- general file-management UI.
+- yerel dosya/klasör gezgini;
+- hedef klasör seçme arayüzü;
+- kopyala / taşı / yeniden adlandır / sil;
+- ZIP / arşiv yönetimi;
+- yerel arama;
+- favoriler / etiketler / sınıflandırma;
+- indirilen dosyaların düzenlenmesi;
+- genel dosya yönetimi arayüzü.
 
-### Folder picker contract
+### Klasör seçici sözleşmesi
 
-When Downloader needs the user to choose a destination folder:
+Downloader kullanıcının hedef klasör seçmesine ihtiyaç duyduğunda:
 
 ```text
 ipad1files://pickFolder?root=<percent-encoded-root>&callback=<percent-encoded-callback>
 ```
 
-For the unified downloader, recommended callback:
+Birleşik indirici için önerilen geri çağrı:
 
 ```text
 ipad1downloader://folderSelected?path=<percent-encoded-absolute-path>
 ```
 
-Until that receiving contract is physically verified, Downloader may use only the canonical `Downloads` root. It must not add its own fallback folder browser.
+Bu alma sözleşmesi fiziksel olarak doğrulanana kadar Downloader yalnızca standart `Downloads` kökünü kullanabilir. Kendi yedek klasör gezginini eklememelidir.
 
-### Show downloaded file
+### İndirilen dosyayı gösterme
 
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-Same physical file; no copy.
+Aynı fiziksel dosya; kopya yok.
 
-## Completed-file routing
+## Tamamlanan dosyanın yönlendirilmesi
 
-Only after a transfer has completed successfully and the local file exists:
+Yalnızca transfer başarıyla tamamlandıktan ve yerel dosya oluştuktan sonra:
 
 ### PDF
 
@@ -113,7 +113,7 @@ ipad1pdf://open?path=<percent-encoded-absolute-path>
 
 ### Video
 
-Initial case-insensitive extensions:
+İlk aşamadaki büyük/küçük harf duyarsız uzantılar:
 
 ```text
 .mkv
@@ -123,55 +123,55 @@ Initial case-insensitive extensions:
 .avi
 ```
 
-Contract:
+Sözleşme:
 
 ```text
 ipad1player://open?path=<percent-encoded-absolute-path>
 ```
 
-### Other files
+### Diğer dosyalar
 
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-Downloader must not render PDFs, decode video, discover subtitles, or implement a general local preview system.
+Downloader PDF görüntülememeli, video çözmemeli, altyazı aramamalı ve genel bir yerel önizleme sistemi yazmamalıdır.
 
-## HTTP/HTTPS engine
+## HTTP/HTTPS motoru
 
-Owns:
+Sorumlulukları:
 
-- HTTP/HTTPS URL download;
-- redirects;
-- response/status validation;
+- HTTP/HTTPS URL indirme;
+- yönlendirmeler;
+- yanıt / durum kodu doğrulaması;
 - `Content-Length`;
-- `Content-Disposition` filename handling;
-- `.part` temporary file;
-- direct stream-to-disk;
-- progress/speed/ETA;
-- cancel/retry;
-- HTTP Range resume with correct `206 Partial Content` validation;
-- network-loss recovery where safe;
-- bounded queue metadata.
+- `Content-Disposition` dosya adı işleme;
+- `.part` geçici dosya;
+- doğrudan diske akıtma;
+- ilerleme / hız / kalan süre;
+- iptal / yeniden deneme;
+- `206 Partial Content` doğrulamasıyla HTTP Range devam ettirme;
+- güvenli olduğu yerde ağ kopmasından kurtarma;
+- sınırlı kuyruk metadata'sı.
 
-## FTP engine
+## FTP motoru
 
-Owns:
+Sorumlulukları:
 
-- FTP connection/authentication;
-- remote browse;
-- FTP download/upload;
-- remote rename/delete;
+- FTP bağlantısı / kimlik doğrulama;
+- uzak gezinme;
+- FTP indirme / yükleme;
+- uzak yeniden adlandırma / silme;
 - MKD/RMD;
-- saved FTP servers;
-- remote search/sort;
-- FTP-specific retry/resume semantics.
+- kayıtlı FTP sunucuları;
+- uzak arama / sıralama;
+- FTP'ye özgü yeniden deneme / devam ettirme davranışı.
 
-## Wi-Fi Receive engine
+## Wi-Fi Alma motoru
 
-Purpose: transfer a file from a Windows machine to the iPad over the same local Wi-Fi/LAN.
+Amaç: aynı yerel Wi-Fi/LAN üzerinden Windows bilgisayardan iPad'e dosya aktarmak.
 
-Initial design:
+İlk tasarım:
 
 ```text
 Windows browser
@@ -181,34 +181,34 @@ Windows browser
     -> canonical Downloads path
 ```
 
-Requirements:
+Gereksinimler:
 
-- no whole-file RAM buffering;
-- one active incoming transfer initially;
-- sanitize received filename;
-- `.part` while receiving, final rename only on success;
-- write only under the allowed shared root or a path returned by iPad1Files picker;
-- no directory browser or file manager in the receiver;
-- stop server when user disables Wi-Fi Receive or app exits;
-- display local address/port and simple connection state;
-- after completion, use the same sibling-app handoff rules.
+- dosyanın tamamı RAM'de tamponlanmaz;
+- başlangıçta aynı anda tek gelen transfer;
+- alınan dosya adı temizlenir;
+- alım sırasında `.part`, yalnızca başarıda son ada çevrilir;
+- yalnızca izin verilen ortak kök altına veya iPad1Files seçicisinin döndürdüğü yola yazılır;
+- alıcıda dizin gezgini veya dosya yöneticisi yok;
+- kullanıcı Wi-Fi Alma'yı kapatınca veya uygulama kapanınca sunucu durur;
+- yerel adres/port ve basit bağlantı durumu gösterilir;
+- tamamlanınca aynı kardeş uygulama devir kuralları uygulanır.
 
-A simple upload page is allowed only as the transport entry point. It must not become a local filesystem manager.
+Basit bir yükleme sayfasına yalnızca transfer giriş noktası olarak izin verilir; yerel dosya sistemi yöneticisine dönüşmemelidir.
 
-## Memory and concurrency policy
+## Bellek ve eşzamanlılık politikası
 
-Safe defaults for iPad 1:
+iPad 1 için güvenli varsayılanlar:
 
-- one active large transfer at a time;
-- small streaming buffers;
-- bounded metadata-only queue;
-- no whole-file `NSData` buffers;
-- no segmented/multi-thread download initially;
-- no large caches or thumbnails;
-- no embedded browser/PDF/video subsystem.
+- aynı anda tek aktif büyük transfer;
+- küçük akış tamponları;
+- yalnız metadata tutan sınırlı kuyruk;
+- dosyanın tamamını tutan `NSData` tamponları yok;
+- başlangıçta parçalı/çok iş parçacıklı indirme yok;
+- büyük önbellek veya küçük resimler yok;
+- gömülü tarayıcı/PDF/video alt sistemi yok.
 
-## Physical-test rule
+## Fiziksel test kuralı
 
-Source inspection and successful build are not feature verification.
+Kaynak kodu incelemek ve başarılı derleme, özelliğin doğrulandığı anlamına gelmez.
 
-Physical iPad 1 behavior is authoritative. A feature should be marked verified only after device testing.
+Belirleyici olan fiziksel iPad 1 davranışıdır. Bir özellik ancak cihaz testinden sonra doğrulanmış olarak işaretlenmelidir.

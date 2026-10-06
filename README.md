@@ -1,70 +1,70 @@
-# iPad1Downloader v1.4 source
+# iPad1Downloader v1.4 kaynak kodu
 
-Unified lightweight network-transfer application for iPad 1 / iOS 5.1.1 / armv7 / MRC / Theos.
+iPad 1 / iOS 5.1.1 / armv7 / MRC / Theos için birleşik, hafif ağ transfer uygulaması.
 
-This repository is the active implementation base for the migration from `iPad1FTPDownloader` to `iPad1Downloader`.
+Bu repo, `iPad1FTPDownloader`'dan `iPad1Downloader`'a geçişin aktif geliştirme tabanıdır.
 
-## Current source state
+## Kaynak kodun güncel durumu
 
-Source implemented, **physical iPad 1 test pending**:
+Kaynakta yazıldı, **fiziksel iPad 1 testi bekleniyor**:
 
-- existing FTP browse/download/upload and remote FTP operations retained;
-- HTTP/HTTPS download screen added;
-- HTTP response validation and redirect-friendly `NSURLConnection` flow;
-- `suggestedFilename` / URL filename fallback;
-- unique-name collision handling;
-- `.part` temporary files;
-- direct stream-to-disk;
-- HTTP progress and speed;
-- HTTP cancel;
-- Windows -> iPad local Wi-Fi receive server;
-- browser-based Windows upload page;
-- one incoming Wi-Fi transfer at a time;
-- six-digit session token for Wi-Fi receive;
-- Wi-Fi receive writes directly to `.part` and finalizes on success;
-- unified three-tab shell: `FTP`, `HTTP`, `Wi-Fi Al`.
+- mevcut FTP gezinme/indirme/yükleme ve uzak FTP işlemleri korundu;
+- HTTP/HTTPS indirme ekranı eklendi;
+- HTTP yanıt doğrulaması ve yönlendirmeye uygun `NSURLConnection` akışı;
+- `suggestedFilename` / URL'deki dosya adına geri dönüş;
+- benzersiz ad ile çakışma yönetimi;
+- `.part` geçici dosyaları;
+- doğrudan diske akıtma;
+- HTTP ilerleme ve hız göstergesi;
+- HTTP iptal;
+- Windows -> iPad yerel Wi-Fi alma sunucusu;
+- tarayıcı tabanlı Windows yükleme sayfası;
+- aynı anda tek Wi-Fi alımı;
+- Wi-Fi alma için altı haneli oturum kodu;
+- Wi-Fi alma doğrudan `.part` dosyasına yazar, başarıda tamamlar;
+- birleşik üç sekmeli arayüz: `FTP`, `HTTP`, `Wi-Fi Al`.
 
-Previously physically verified FTP behavior remains historical truth, but the **unified v1.4 package itself is not yet physically verified**.
+Daha önce fiziksel cihazda doğrulanmış FTP davranışı geçerliliğini korur, ancak **birleşik v1.4 paketinin kendisi henüz fiziksel cihazda doğrulanmadı**.
 
-## Transport ownership
+## Transfer sahipliği
 
-`iPad1Downloader` owns network transfer only:
+`iPad1Downloader` yalnızca ağ transferinden sorumludur:
 
-- FTP browse/download/upload and remote FTP operations;
-- HTTP/HTTPS downloads;
-- Windows -> iPad Wi-Fi receive over the local network;
-- transfer progress/speed;
-- retry/cancel/resume where the protocol supports it;
-- bounded queue metadata;
-- stream-to-disk behavior.
+- FTP gezinme/indirme/yükleme ve uzak FTP işlemleri;
+- HTTP/HTTPS indirmeleri;
+- yerel ağ üzerinden Windows -> iPad Wi-Fi alma;
+- transfer ilerlemesi / hızı;
+- protokolün desteklediği yerde yeniden deneme / iptal / devam ettirme;
+- sınırlı kuyruk metadata'sı;
+- doğrudan diske akıtma.
 
-FTP, HTTP/HTTPS and Wi-Fi Receive remain separate transport engines. Protocol code is not mixed into one monolithic engine.
+FTP, HTTP/HTTPS ve Wi-Fi Alma ayrı transfer motorlarıdır. Protokol kodları tek bir dev motorda karıştırılmaz.
 
-## iPad1Files boundary
+## iPad1Files sınırı
 
-`iPad1Downloader` must **not** implement local file-manager responsibilities.
+`iPad1Downloader` yerel dosya yöneticisi işlevleri **üstlenmemelidir**.
 
-These belong to `iPad1Files`:
+Bunlar `iPad1Files`'a aittir:
 
-- local file/folder browsing;
-- destination folder picker;
-- copy/move/rename/delete;
-- ZIP/archive handling;
-- local search/favorites;
-- downloaded-file organization;
-- general `Open With` / file-management UI.
+- yerel dosya/klasör gezinme;
+- hedef klasör seçici;
+- kopyala / taşı / yeniden adlandır / sil;
+- ZIP / arşiv işlemleri;
+- yerel arama / favoriler;
+- indirilen dosyaların düzenlenmesi;
+- genel "Birlikte Aç" / dosya yönetimi arayüzü.
 
-Canonical shared download root:
+Standart ortak indirme kökü:
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-Until the external folder-picker contract is physically verified, HTTP and Wi-Fi Receive write only to this canonical root. Do not add another local browser to Downloader.
+Harici klasör seçici sözleşmesi fiziksel olarak doğrulanana kadar HTTP ve Wi-Fi Alma yalnızca bu köke yazar. Downloader'a ikinci bir yerel dosya gezgini ekleme.
 
-## Wi-Fi Receive
+## Wi-Fi Alma
 
-Low-memory flow:
+Düşük bellekli akış:
 
 ```text
 Windows browser
@@ -76,19 +76,19 @@ Windows browser
     -> /var/mobile/Media/iPad1Files/Downloads/<filename>
 ```
 
-The iPad shows a local address similar to:
+iPad şuna benzer bir yerel adres gösterir:
 
 ```text
 http://192.168.x.x:8080/?token=123456
 ```
 
-Open that address on Windows, choose a file and press `Gönder`.
+Bu adresi Windows'ta açın, bir dosya seçin ve `Gönder`'e basın.
 
-The receiver does not parse multipart form uploads and does not load the complete file into RAM. The tiny HTML page sends the selected file as a raw HTTP `PUT`, which keeps the iPad-side implementation small.
+Alıcı multipart form yüklemelerini ayrıştırmaz ve dosyanın tamamını RAM'e almaz. Küçük HTML sayfası seçilen dosyayı ham bir HTTP `PUT` olarak gönderir; böylece iPad tarafındaki kod küçük kalır.
 
-## Completed-file hand-off
+## Tamamlanan dosyanın devri
 
-The same physical completed file is handed off by path only:
+Aynı fiziksel dosya yalnızca yol ile devredilir:
 
 ```text
 PDF   -> ipad1pdf://open?path=...
@@ -96,22 +96,22 @@ video -> ipad1player://open?path=...
 other -> ipad1files://show?path=...
 ```
 
-No file is copied solely for integration.
+Hiçbir dosya yalnızca entegrasyon için kopyalanmaz.
 
-## Platform rules
+## Platform kuralları
 
 - iPad 1 / Apple A4 / ~256 MB RAM
 - iOS 5.1.1
 - armv7
 - Objective-C / non-ARC MRC
-- legacy iPhoneOS 6.1 SDK
-- direct stream-to-disk
-- one active large transfer preferred
-- no whole-file RAM buffering
-- no embedded general file manager
-- no embedded PDF/video engines
+- eski iPhoneOS 6.1 SDK
+- doğrudan diske akıtma
+- tercihen tek aktif büyük transfer
+- dosyanın tamamını RAM'de tutmak yok
+- gömülü genel dosya yöneticisi yok
+- gömülü PDF/video motoru yok
 
-## Build
+## Derleme
 
 ```bash
 find . -type f -exec touch {} +
@@ -119,10 +119,10 @@ make clean
 make package FINALPACKAGE=1
 ```
 
-Expected package identity after the v1.4 rename:
+v1.4 yeniden adlandırması sonrası beklenen paket kimliği:
 
 ```text
 com.olap.ipad1downloader
 ```
 
-Physical iPad behavior remains authoritative. Do not mark HTTP or Wi-Fi Receive as verified until the built v1.4 package passes on-device testing.
+Belirleyici olan fiziksel iPad davranışıdır. Derlenmiş v1.4 paketi cihaz testlerinden geçmeden HTTP veya Wi-Fi Alma'yı doğrulanmış diye işaretleme.

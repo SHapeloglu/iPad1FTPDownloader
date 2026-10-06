@@ -1,14 +1,14 @@
 # CLAUDE.md
 
-## Project identity
+## Proje kimliği
 
-This repository is **iPad1FTPDownloader**, the FTP specialist for **iPad 1 / iOS 5.1.1 / armv7**.
+Bu repo **iPad1FTPDownloader**'dır: **iPad 1 / iOS 5.1.1 / armv7** için FTP uzmanı uygulama.
 
-The goal is reliable FTP transfer on a 256 MB legacy device. It must not become a generic HTTP/HTTPS downloader, local file manager, media player or PDF reader.
+Amaç, 256 MB RAM'li eski bir cihazda güvenilir FTP transferidir. Genel amaçlı bir HTTP/HTTPS indiriciye, yerel dosya yöneticisine, medya oynatıcıya veya PDF okuyucuya dönüşmemelidir.
 
-## Read first
+## Önce oku
 
-Before architectural or scope changes, read in this order:
+Mimari veya kapsam değişikliğinden önce şu sırayla oku:
 
 1. `INTEGRATION.md`
 2. `ARCHITECTURE.md`
@@ -16,82 +16,82 @@ Before architectural or scope changes, read in this order:
 4. `SESSION.md`
 5. `TESTING.md`
 
-`INTEGRATION.md` is authoritative for cross-app ownership.
+Uygulamalar arası sahiplikte `INTEGRATION.md` belirleyicidir.
 
-## Non-negotiable constraints
+## Değiştirilemez kısıtlar
 
 - iPad 1
 - 256 MB RAM
 - iOS 5.1.1
 - armv7
 - Objective-C
-- UIKit APIs available to iOS 5
-- Manual memory management / MRC
-- Theos `.deb` packaging
-- CFNetwork/CFFTP for FTP
-- stream-based transfer
-- physical-device testing is authoritative
+- iOS 5'te bulunan UIKit API'leri
+- Manuel bellek yönetimi / MRC
+- Theos `.deb` paketleme
+- FTP için CFNetwork/CFFTP
+- akış tabanlı transfer
+- fiziksel cihaz testi belirleyicidir
 
-## Responsibility boundary
+## Sorumluluk sınırı
 
-### Keep in iPad1FTPDownloader
+### iPad1FTPDownloader'da kalır
 
-- FTP connection/authentication
-- remote FTP browsing
-- FTP download/upload
-- FTP pause/resume/cancel/retry
-- FTP progress/speed/ETA
-- bounded FIFO transfer queue
-- failed FTP transfer handling
-- saved FTP servers
-- remote search/sorting
-- remote rename/delete
+- FTP bağlantısı / kimlik doğrulama
+- uzak FTP gezinme
+- FTP indirme / yükleme
+- FTP duraklat / devam / iptal / yeniden dene
+- FTP ilerleme / hız / kalan süre
+- sınırlı FIFO transfer kuyruğu
+- başarısız FTP transferlerinin yönetimi
+- kayıtlı FTP sunucuları
+- uzak arama / sıralama
+- uzak yeniden adlandırma / silme
 - MKD/RMD
-- transfer-oriented local result state
-- completed-file sibling-app path hand-off
+- transfere yönelik yerel sonuç durumu
+- tamamlanan dosyanın yolunu kardeş uygulamaya devretme
 
-### Leave to iPad1Downloader
+### iPad1Downloader'a bırakılır
 
-- HTTP downloads
-- HTTPS downloads
-- browser/web URL download workflows
-- redirect/cookie/header handling
-- HTTP/HTTPS resume semantics
-- HTTP/HTTPS queue/retry/failure management
+- HTTP indirmeleri
+- HTTPS indirmeleri
+- tarayıcı / web URL'si indirme akışları
+- yönlendirme / çerez / başlık yönetimi
+- HTTP/HTTPS devam ettirme
+- HTTP/HTTPS kuyruk / yeniden deneme / hata yönetimi
 
-### Leave to iPad1Files
+### iPad1Files'a bırakılır
 
-- local filesystem browsing/pickers
-- advanced copy/move
-- folder management
-- favorites
-- filesystem-wide local search
-- ZIP/archive
-- rich/general preview
-- text editing
-- Open With registry
+- yerel dosya sistemi gezinme / seçiciler
+- gelişmiş kopyala / taşı
+- klasör yönetimi
+- favoriler
+- dosya sistemi genelinde yerel arama
+- ZIP / arşiv
+- zengin / genel önizleme
+- metin düzenleme
+- "Birlikte Aç" kaydı
 
-### Leave to iPad1Player
+### iPad1Player'a bırakılır
 
-- video decode/playback
-- codecs
-- seek/playback controls
-- subtitle discovery/rendering
+- video çözme / oynatma
+- codec'ler
+- ileri sarma / oynatma kontrolleri
+- altyazı bulma / gösterme
 
-### Leave to iPad1PDFReader
+### iPad1PDFReader'a bırakılır
 
-- PDF rendering
-- page navigation
-- zoom/bookmarks/highlights
+- PDF görüntüleme
+- sayfa gezinme
+- yakınlaştırma / yer imleri / vurgulama
 
-### Other specialists
+### Diğer uzman uygulamalar
 
-- terminal/shell -> iPad1Terminal
-- VNC/remote desktop -> iPad1VNC
+- terminal / kabuk -> iPad1Terminal
+- VNC / uzak masaüstü -> iPad1VNC
 
-A media file does not change transfer ownership. FTP media is transferred here and only the successfully completed accessible local path is handed to Player.
+Dosyanın medya olması transfer sahipliğini değiştirmez. FTP'deki medya burada aktarılır; Player'a yalnızca başarıyla tamamlanmış ve erişilebilir yerel yol verilir.
 
-## Canonical application-family flow
+## Uygulama ailesinin standart akışı
 
 ```text
 FTP Server
@@ -106,39 +106,39 @@ completed-file hand-off
    └─ other -> iPad1Files
 ```
 
-HTTP/HTTPS sources use iPad1Downloader instead.
+HTTP/HTTPS kaynakları bunun yerine iPad1Downloader'ı kullanır.
 
-## Canonical download root
+## Standart indirme kökü
 
-All new FTP downloads must be written directly to:
+Tüm yeni FTP indirmeleri doğrudan buraya yazılmalı:
 
 ```text
 /var/mobile/Media/iPad1Files/Downloads/
 ```
 
-Do not create new downloads in `/var/mobile/Media/iPad1FTPDownloads/` and do not copy completed files merely for sibling integration.
+Yeni indirmeleri `/var/mobile/Media/iPad1FTPDownloads/` altına yazma ve tamamlanan dosyaları yalnızca kardeş entegrasyonu için kopyalama.
 
-## Remote path invariant
+## Uzak yol kuralı
 
-Every remote FTP directory path must:
+Her uzak FTP dizin yolu:
 
-- start with `/`;
-- end with `/`;
-- represent root as exactly `/`.
+- `/` ile başlamalı;
+- `/` ile bitmeli;
+- kök dizin tam olarak `/` olmalı.
 
-Use one canonical helper everywhere: manual entry, current state, child navigation, parent navigation, refresh and listing URL construction.
+Her yerde tek bir standart yardımcı fonksiyon kullan: elle giriş, mevcut durum, alt klasöre gitme, üst klasöre çıkma, yenileme ve listeleme URL'si oluşturma.
 
-## Completed-file hand-off
+## Tamamlanan dosyanın devri
 
 ### Video
 
-For completed `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi` files:
+Tamamlanmış `.mkv`, `.mp4`, `.mov`, `.m4v`, `.avi` dosyaları için:
 
 ```text
 ipad1player://open?path=<percent-encoded-absolute-path>
 ```
 
-Do not decode/play media in FTPDownloader.
+FTPDownloader içinde medya çözme/oynatma yapma.
 
 ### PDF
 
@@ -146,99 +146,99 @@ Do not decode/play media in FTPDownloader.
 ipad1pdf://open?path=<percent-encoded-absolute-path>
 ```
 
-### Files
+### Dosyalar
 
 ```text
 ipad1files://show?path=<percent-encoded-absolute-path>
 ```
 
-All use the same physical file. If a sibling scheme is unavailable, leave the file untouched and fail gracefully.
+Hepsi aynı fiziksel dosyayı kullanır. Kardeş uygulamanın scheme'i yoksa dosyaya dokunma ve hatayı nazikçe göster.
 
-## Current roadmap order
+## Güncel yol haritası sırası
 
 ### v1.3
 
-- canonical shared Downloads root
-- single physical file rule
-- centralized remote path invariant
-- Player/PDFReader/Files same-path hand-off
-- FTP regression testing
-- download destination preference + iPad1Files picker integration
+- standart ortak Downloads kökü
+- tek fiziksel dosya kuralı
+- merkezi uzak yol kuralı
+- Player/PDFReader/Files'a aynı yolla devir
+- FTP regresyon testleri
+- indirme hedefi tercihi + iPad1Files klasör seçici entegrasyonu
 
 ### v1.4
 
-- FTP pause/resume/cancel
-- bounded queue
-- retry/failure recovery
-- progress/speed/ETA
-- collision handling
-- metadata-only history
-- deliberately low concurrency on iPad 1
+- FTP duraklat / devam / iptal
+- sınırlı kuyruk
+- yeniden deneme / hatadan kurtarma
+- ilerleme / hız / kalan süre
+- dosya adı çakışması yönetimi
+- yalnız metadata tutan geçmiş
+- iPad 1'de bilinçli olarak düşük eşzamanlılık
 
 ### v1.5
 
-- Saved Servers editor
-- remote search/sort
-- folders-first
-- remote metadata
-- remote operations polish
+- Kayıtlı Sunucular düzenleyicisi
+- uzak arama / sıralama
+- önce klasörler
+- uzak metadata
+- uzak işlemlerin iyileştirilmesi
 
 ### v1.6
 
-Sibling-app integration polish.
+Kardeş uygulama entegrasyonunun iyileştirilmesi.
 
 ### v1.7
 
-Keychain-backed saved credentials and related hardening.
+Keychain tabanlı kayıtlı kimlik bilgileri ve ilgili güvenlik sıkılaştırmaları.
 
 ### HTTP/HTTPS
 
-Explicitly outside this repository; belongs to iPad1Downloader.
+Bu reponun açıkça dışında; iPad1Downloader'a aittir.
 
 ### SFTP/FTPS
 
-Experimental research only until physical-device profiling proves acceptable.
+Fiziksel cihaz profili kabul edilebilir olduğunu gösterene kadar yalnızca deneysel araştırma.
 
-## Memory policy
+## Bellek politikası
 
-### Safe
+### Güvenli
 
-- streamed FTP reads/writes
-- small buffers around 8–16 KB class
-- bounded queue/history metadata
-- URL/path hand-offs
+- akışla FTP okuma/yazma
+- 8–16 KB civarı küçük tamponlar
+- sınırlı kuyruk / geçmiş metadata'sı
+- URL/yol devirleri
 
-### Caution
+### Dikkatli
 
-- recursive remote search
-- simultaneous transfers
-- very long queues
-- heavy secure-protocol libraries
+- özyinelemeli uzak arama
+- eşzamanlı transferler
+- çok uzun kuyruklar
+- ağır güvenli protokol kütüphaneleri
 
-### Do not add
+### Ekleme
 
-- whole-file RAM buffering
-- HTTP/HTTPS downloader subsystem
-- media playback/codec/subtitle engine
-- rich local preview framework
-- PDF rendering
+- dosyanın tamamını RAM'de tutma
+- HTTP/HTTPS indirici alt sistemi
+- medya oynatma / codec / altyazı motoru
+- zengin yerel önizleme çatısı
+- PDF görüntüleme
 - OCR
 - AI/ML
-- large background caches
-- SMB expansion
-- heavy SFTP dependencies without profiling
+- büyük arka plan önbellekleri
+- SMB genişletmesi
+- profil çıkarılmadan ağır SFTP bağımlılıkları
 
-## SFTP / FTPS rule
+## SFTP / FTPS kuralı
 
-Never claim SFTP or FTPS support because a stub or UI element exists. Require a real armv7/iOS 5 implementation and physical profiling.
+Bir taslak sınıf veya arayüz öğesi var diye asla SFTP ya da FTPS desteği olduğunu söyleme. Gerçek bir armv7/iOS 5 uygulaması ve fiziksel profil çıkarma şarttır.
 
-## Coding style
+## Kod stili
 
-Prefer small Objective-C classes, explicit delegates, iOS-5-compatible APIs, explicit MRC ownership, defensive error handling, streamed file/network I/O and one shared path-normalization helper.
+Küçük Objective-C sınıflarını, açık delegate'leri, iOS 5 uyumlu API'leri, açık MRC sahipliğini, savunmacı hata yönetimini, akış tabanlı dosya/ağ G/Ç'sini ve tek bir ortak yol normalleştirme yardımcısını tercih et.
 
-Avoid duplicated path logic, hidden whole-file reads, blocking network operations on the main thread, swallowed FTP errors, HTTP downloader scope creep, local file-manager scope creep and media playback scope creep.
+Tekrarlanan yol mantığından, gizli tam dosya okumalarından, ana thread'de bloklayan ağ işlemlerinden, yutulan FTP hatalarından ve HTTP indirici, yerel dosya yöneticisi ya da medya oynatma yönünde kapsam kaymasından kaçın.
 
-## Build
+## Derleme
 
 ```bash
 find . -type f -exec touch {} +
@@ -246,16 +246,16 @@ make clean
 make package FINALPACKAGE=1
 ```
 
-## Release checklist
+## Sürüm kontrol listesi
 
-1. Read `INTEGRATION.md`.
-2. Build from a clean tree.
-3. Install on physical iPad 1.
-4. Verify canonical shared download root and no duplicate copy.
-5. Verify remote path invariant.
-6. Verify FTP download/upload and remote commands.
-7. Verify transfer progress/speed and changed transfer-manager behavior.
-8. Verify Player/PDFReader/Files hand-offs use the same completed physical file.
-9. Verify local UI remains FTP-transfer-oriented.
-10. Confirm no HTTP/HTTPS downloader or media playback logic was introduced.
-11. Update `CHANGELOG.md`, `SESSION.md`, `TASK.md` and `TESTING.md` with actual physical results.
+1. `INTEGRATION.md`'yi oku.
+2. Temiz ağaçtan derle.
+3. Fiziksel iPad 1'e kur.
+4. Standart ortak indirme kökünü ve yinelenen kopya olmadığını doğrula.
+5. Uzak yol kuralını doğrula.
+6. FTP indirme/yükleme ve uzak komutları doğrula.
+7. Transfer ilerlemesini/hızını ve değişen transfer yöneticisi davranışını doğrula.
+8. Player/PDFReader/Files devirlerinin aynı tamamlanmış fiziksel dosyayı kullandığını doğrula.
+9. Yerel arayüzün FTP transferine odaklı kaldığını doğrula.
+10. HTTP/HTTPS indirici veya medya oynatma mantığı eklenmediğini doğrula.
+11. `CHANGELOG.md`, `SESSION.md`, `TASK.md` ve `TESTING.md`'yi gerçek fiziksel sonuçlarla güncelle.

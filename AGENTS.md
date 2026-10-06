@@ -1,10 +1,10 @@
 # AGENTS.md
 
-## Purpose
+## Amaç
 
-This file gives coding agents a compact operational contract for this repository.
+Bu dosya, bu repoda çalışan kod asistanları için kısa bir çalışma sözleşmesidir.
 
-## Target
+## Hedef
 
 - iPad 1
 - iOS 5.1.1
@@ -12,62 +12,62 @@ This file gives coding agents a compact operational contract for this repository
 - Theos
 - Objective-C
 - UIKit / Foundation / CFNetwork
-- Manual Reference Counting
+- Manuel referans sayımı (MRC)
 
-## Rules
+## Kurallar
 
-1. Preserve iOS 5 compatibility.
-2. Do not introduce Swift.
-3. Do not silently require ARC.
-4. Do not use APIs newer than iOS 5 without compatibility guards.
-5. Keep networking asynchronous.
-6. Avoid large in-memory buffers.
-7. Keep the `.deb` packaging flow intact.
-8. Never commit credentials.
-9. Treat physical iPad behavior as the source of truth.
-10. Update docs when behavior or architecture changes.
-11. Before proposing or implementing any feature, perform the sibling-app ownership check below.
+1. iOS 5 uyumluluğunu koru.
+2. Swift ekleme.
+3. Sessizce ARC gerektiren kod yazma.
+4. iOS 5'ten yeni API'leri uyumluluk koruması olmadan kullanma.
+5. Ağ işlemlerini asenkron tut.
+6. Büyük bellek içi tamponlardan kaçın.
+7. `.deb` paketleme akışını bozma.
+8. Kimlik bilgilerini asla commit etme.
+9. Fiziksel iPad davranışını doğruluk kaynağı kabul et.
+10. Davranış veya mimari değişince dokümanları güncelle.
+11. Herhangi bir özelliği önermeden veya yazmadan önce aşağıdaki kardeş uygulama sahiplik kontrolünü yap.
 
-## Mandatory sibling-app ownership check
+## Zorunlu kardeş uygulama sahiplik kontrolü
 
-- FTP transfer / remote FTP operation -> **iPad1FTPDownloader**
-- HTTP/HTTPS download -> **iPad1Downloader**
-- local filesystem / picker / file-management -> **iPad1Files**
-- video playback / codecs / subtitles -> **iPad1Player**
-- PDF rendering / reading -> **iPad1PDFReader**
-- terminal / shell -> **iPad1Terminal**
-- VNC / remote desktop -> **iPad1VNC**
+- FTP transferi / uzak FTP işlemleri -> **iPad1FTPDownloader**
+- HTTP/HTTPS indirme -> **iPad1Downloader**
+- yerel dosya sistemi / seçici / dosya yönetimi -> **iPad1Files**
+- video oynatma / codec / altyazı -> **iPad1Player**
+- PDF görüntüleme / okuma -> **iPad1PDFReader**
+- terminal / kabuk -> **iPad1Terminal**
+- VNC / uzak masaüstü -> **iPad1VNC**
 
-Transport determines downloader ownership. A media file downloaded over FTP is still an iPad1FTPDownloader transfer; after successful completion, hand only the accessible local path to iPad1Player.
+İndirme sahipliğini taşıma protokolü belirler. FTP ile indirilen bir medya dosyası yine iPad1FTPDownloader transferidir; transfer başarıyla bitince iPad1Player'a yalnızca erişilebilir yerel yol verilir.
 
-Do not add HTTP/HTTPS downloader behavior to this repository. Do not add media playback behavior here. Prefer shared physical paths and lightweight URL-scheme hand-offs.
+Bu repoya HTTP/HTTPS indirici davranışı ekleme. Medya oynatma davranışı ekleme. Ortak fiziksel yolları ve hafif URL-scheme devirlerini tercih et.
 
-## Directory-path invariant
+## Dizin yolu kuralı
 
-Every remote FTP directory path must:
+Her uzak FTP dizin yolu:
 
-- start with `/`
-- end with `/`
-- represent root as exactly `/`
+- `/` ile başlamalı,
+- `/` ile bitmeli,
+- kök dizin tam olarak `/` olmalı.
 
-This invariant must hold in UI state, navigation state and FTP URL construction.
+Bu kural arayüz durumunda, gezinme durumunda ve FTP URL'si oluşturulurken her zaman geçerli olmalı.
 
-## Transfer principles
+## Transfer ilkeleri
 
-- Stream FTP downloads directly to disk.
-- Stream FTP uploads directly from disk.
-- Keep transfer buffers small.
-- Keep active concurrency deliberately low on iPad 1.
-- Expose user-visible errors.
-- If implementing resume, verify FTP server support and local file offset behavior.
-- Do not call a transfer complete until the stream ended cleanly.
-- Completed video may be handed to `ipad1player://open?path=...`; do not decode/play it here.
+- FTP indirmelerini doğrudan diske akıt.
+- FTP yüklemelerini doğrudan diskten akıt.
+- Transfer tamponlarını küçük tut.
+- iPad 1'de eşzamanlı aktif transfer sayısını bilinçli olarak düşük tut.
+- Hataları kullanıcıya göster.
+- Devam ettirme (resume) yazarken FTP sunucusu desteğini ve yerel dosya ofseti davranışını doğrula.
+- Akış temiz bir şekilde bitmeden transferi tamamlandı sayma.
+- Tamamlanan video `ipad1player://open?path=...` ile devredilebilir; burada çözme/oynatma yapma.
 
-## Secure protocols
+## Güvenli protokoller
 
-SFTP and FTPS are not considered implemented until actual working transports are linked and tested on iPad 1.
+SFTP ve FTPS, gerçekten çalışan taşıma katmanları bağlanıp iPad 1'de test edilene kadar yapılmış sayılmaz.
 
-## Required validation after source changes
+## Kaynak değişikliğinden sonra zorunlu doğrulama
 
 ```bash
 find . -type f -exec touch {} +
@@ -75,16 +75,16 @@ make clean
 make package FINALPACKAGE=1
 ```
 
-Then install on the physical iPad and run the relevant cases from `TESTING.md`.
+Ardından fiziksel iPad'e kur ve `TESTING.md`'deki ilgili senaryoları çalıştır.
 
-## Documentation ownership
+## Doküman sorumlulukları
 
-- `README.md`: user/project overview
-- `ARCHITECTURE.md`: structure and technical decisions
-- `TASK.md`: active backlog
-- `SESSION.md`: latest hand-off state
-- `TESTING.md`: verification plan
-- `ROADMAP.md`: future versions
-- `CHANGELOG.md`: released/development changes
-- `DEVELOPMENT.md`: build/install workflow
-- `CLAUDE.md`: detailed agent context
+- `README.md`: kullanıcı/proje özeti
+- `ARCHITECTURE.md`: yapı ve teknik kararlar
+- `TASK.md`: aktif iş listesi
+- `SESSION.md`: son devir durumu
+- `TESTING.md`: doğrulama planı
+- `ROADMAP.md`: gelecek sürümler
+- `CHANGELOG.md`: yayımlanan / geliştirilen değişiklikler
+- `DEVELOPMENT.md`: derleme/kurulum akışı
+- `CLAUDE.md`: ayrıntılı asistan bağlamı

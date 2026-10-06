@@ -1,59 +1,59 @@
 # SECURITY.md
 
-## Scope
+## Kapsam
 
-This is a legacy-client project targeting iOS 5.1.1. The operating system and its TLS/SSH ecosystem are obsolete by modern security standards. Security claims must therefore be conservative and explicit.
+Bu proje iOS 5.1.1'i hedefleyen eski bir istemcidir. İşletim sistemi ve onun TLS/SSH ekosistemi günümüz güvenlik standartlarına göre eskimiştir. Bu yüzden güvenlik iddiaları temkinli ve açık olmalıdır.
 
-## Credentials
+## Kimlik bilgileri
 
-Never commit:
+Asla commit etme:
 
-- FTP passwords
-- production usernames tied to sensitive systems
-- SSH private keys
-- API tokens
-- hosting-panel credentials
-- private server configuration
+- FTP şifreleri
+- hassas sistemlere bağlı üretim kullanıcı adları
+- SSH özel anahtarları
+- API token'ları
+- hosting paneli kimlik bilgileri
+- özel sunucu yapılandırmaları
 
-Use placeholders in documentation and screenshots intended for public repositories.
+Herkese açık repolara gidecek doküman ve ekran görüntülerinde yer tutucu değerler kullan.
 
-## Plain FTP
+## Düz FTP
 
-Plain FTP does not encrypt credentials or file contents in transit. Use it only on networks/servers where that risk is understood and acceptable.
+Düz FTP, kimlik bilgilerini ve dosya içeriklerini aktarım sırasında şifrelemez. Yalnızca bu riskin bilindiği ve kabul edilebilir olduğu ağ/sunucularda kullan.
 
 ## SFTP
 
-SFTP is not implemented merely by having UI options or abstraction classes. It requires a real SSH/SFTP transport such as libssh2 compiled for the iOS 5/armv7 target and verified on the physical device.
+Arayüzde seçenek veya soyutlama sınıfları olması SFTP'nin yapıldığı anlamına gelmez. iOS 5/armv7 hedefi için derlenmiş libssh2 gibi gerçek bir SSH/SFTP taşıma katmanı ve fiziksel cihazda doğrulama gerekir.
 
 ## FTPS
 
-FTPS requires a real TLS-capable FTP implementation. Legacy iOS 5 TLS capabilities may be incompatible with modern server policies. Do not weaken a production server's TLS configuration solely to accommodate this client without understanding the security impact.
+FTPS, TLS destekli gerçek bir FTP uygulaması gerektirir. iOS 5'in eski TLS yetenekleri günümüz sunucu politikalarıyla uyumsuz olabilir. Güvenlik etkisini anlamadan, yalnızca bu istemciye uyum için üretim sunucusunun TLS yapılandırmasını zayıflatma.
 
-## Saved passwords
+## Kayıtlı şifreler
 
-If saved-server profiles persist passwords in simple preferences, treat that as convenience rather than secure secret storage. A future hardening step should move secrets into an iOS-5-compatible Keychain implementation.
+Kayıtlı sunucu profilleri şifreleri basit tercihler (preferences) içinde saklıyorsa bunu güvenli gizli bilgi saklama değil, kolaylık olarak değerlendir. İleride şifreler iOS 5 uyumlu bir Keychain uygulamasına taşınmalıdır.
 
-## Legacy SSH used for deployment
+## Dağıtımda kullanılan eski SSH
 
-Modern OpenSSH may require this compatibility override to communicate with the jailbroken iPad's old SSH daemon:
+Güncel OpenSSH, jailbreak'li iPad'deki eski SSH sunucusuyla konuşmak için şu uyumluluk ayarını gerektirebilir:
 
 ```bash
 -o HostKeyAlgorithms=+ssh-rsa
 ```
 
-Keep the override scoped to the single command or host-specific SSH configuration. Do not globally re-enable obsolete algorithms for unrelated hosts.
+Bu ayarı tek komutla veya hosta özel SSH yapılandırmasıyla sınırlı tut. Eski algoritmaları ilgisiz hostlar için genel olarak yeniden açma.
 
-## Vulnerability reports
+## Güvenlik açığı bildirimi
 
-When reporting a security issue, include:
+Bir güvenlik sorunu bildirirken şunları ekleyin:
 
-- affected version;
-- iOS version/device;
-- protocol involved;
-- reproducible steps;
-- whether the issue exposes credentials, file contents, or arbitrary filesystem access;
-- whether the behavior is caused by the application or the legacy platform itself.
+- etkilenen sürüm;
+- iOS sürümü / cihaz;
+- ilgili protokol;
+- yeniden üretme adımları;
+- sorunun kimlik bilgilerini, dosya içeriklerini veya dosya sistemine keyfi erişimi açığa çıkarıp çıkarmadığı;
+- davranışın uygulamadan mı yoksa eski platformun kendisinden mi kaynaklandığı.
 
-## Release rule
+## Sürüm kuralı
 
-Do not describe a protocol or credential-storage feature as secure until its actual implementation and on-device behavior have been reviewed and tested.
+Bir protokolün veya kimlik bilgisi saklama özelliğinin gerçek uygulaması ve cihaz üzerindeki davranışı incelenip test edilmeden onu güvenli diye tanımlama.
